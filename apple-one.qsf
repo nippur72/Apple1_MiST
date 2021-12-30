@@ -177,7 +177,6 @@ set_global_assignment -name VERILOG_FILE rtl/ram.v
 set_global_assignment -name VERILOG_FILE rtl/rom_basic.v
 set_global_assignment -name VERILOG_FILE rtl/rom_wozmon.v
 set_global_assignment -name VERILOG_FILE rtl/vram.v
-set_global_assignment -name VERILOG_FILE rtl/uart.v
 set_global_assignment -name VERILOG_FILE rtl/ps2keyboard.v
 set_global_assignment -name VERILOG_FILE rtl/vga.v
 set_global_assignment -name VERILOG_FILE rtl/async_tx_rx.v

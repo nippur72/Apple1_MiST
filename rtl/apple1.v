@@ -101,23 +101,14 @@ module apple1(
     // font mode, background and foreground colour
     wire vga_mode_cs = (ab[15:2] == 14'b11000000000000); // 0xC000 -> 0xC003
 
-    // RX: Either keyboard or UART input
-    // TX: Always VGA and UART output
-    wire rx_cs = (ab[15:1]  == 15'b110100000001000);     // 0xD010 -> 0xD011
-    wire tx_cs = (ab[15:1]  == 15'b110100000001001);     // 0xD012 -> 0xD013
-    
-    // select UART on transmit but only receive when PS/2 is not selected.
-    wire uart_cs = tx_cs | ((~ps2_select) & rx_cs);
+    wire keyboard_cs = (ab[15:1]  == 15'b110100000001000);     // 0xD010 -> 0xD011
+    wire display_cs  = (ab[15:1]  == 15'b110100000001001);     // 0xD012 -> 0xD013          
+    wire ps2kb_cs    = ps2_select & keyboard_cs;      
+    wire basic_cs    = (ab[15:12] ==  4'b1110);             // 0xE000 -> 0xEFFF
+    wire rom_cs      = (ab[15:8]  ==  8'b11111111);         // 0xFF00 -> 0xFFFF
 
-    // select PS/2 keyboard input when selected.
-    wire ps2kb_cs = ps2_select & rx_cs;
-    
-    // VGA always get characters when they are sent.
-    wire vga_cs   = tx_cs;
-
-    wire basic_cs = (ab[15:12] ==  4'b1110);             // 0xE000 -> 0xEFFF
-    wire rom_cs =   (ab[15:8]  ==  8'b11111111);         // 0xFF00 -> 0xFFFF
-
+	 wire [7:0] display_dout = 8'b0;   // display always returns ready on the control port
+	 
     //////////////////////////////////////////////////////////////////////////
     // RAM and ROM
 
@@ -150,29 +141,6 @@ module apple1(
     //////////////////////////////////////////////////////////////////////////
     // Peripherals
 
-    // UART
-    wire [7:0] uart_dout;
-    uart #(
-        `ifdef SIM
-        100, 10, 2 // for simulation don't need real baud rates
-        `else
-        25000000, 115200, 8 // 25MHz, 115200 baud, 8 times RX oversampling
-        `endif
-    ) my_uart(
-        .clk(clk14),
-        .enable(uart_cs & cpu_clken),
-        .rst(rst),
-
-        .uart_rx(uart_rx),
-        .uart_tx(uart_tx),
-        .uart_cts(uart_cts),
-
-        .address(ab[1:0]),        // for uart
-        .w_en(we & uart_cs),
-        .din(dbo),
-        .dout(uart_dout)
-    );
-
     // PS/2 keyboard interface
     wire [7:0] ps2_dout;
     ps2keyboard keyboard(
@@ -185,15 +153,9 @@ module apple1(
         .dout(ps2_dout)
     );
 
-    // VGA Display interface
-    reg [2:0] fg_colour;
-    reg [2:0] bg_colour;
-    reg [1:0] font_mode;
-    reg [7:0] vga_mode_dout;
-
     vga vga(
         .clk14(clk14),
-        .enable(vga_cs & cpu_clken),
+        .enable(display_cs & cpu_clken),
         .rst(rst),
 
         .vga_h_sync(vga_h_sync),
@@ -203,51 +165,13 @@ module apple1(
         .vga_blu(vga_blu),
 
         .address(ab[0]),
-        .w_en(we & vga_cs),
+        .w_en(we & display_cs),
         .din(dbo),
-        .mode(font_mode),
-        .fg_colour(fg_colour),
-        .bg_colour(bg_colour),
+        .mode(2'b0),
+        .fg_colour(3'd7),
+        .bg_colour(3'd0),
         .clr_screen(vga_cls)
     );
-
-    // Handle font mode and foreground and background
-    // colours. This so isn't Apple One authentic, but
-    // it can't hurt to have some fun. :D
-    always @(posedge clk14 or posedge rst)
-    begin
-        if (rst)
-        begin
-            font_mode <= 2'b0;
-            fg_colour <= 3'd7;
-            bg_colour <= 3'd0;
-        end
-        else
-        begin
-            case (ab[1:0])
-            2'b00:
-            begin
-                vga_mode_dout = {6'b0, font_mode};
-                if (vga_mode_cs & we & cpu_clken)
-                    font_mode <= dbo[1:0];
-            end
-            2'b01:
-            begin
-                vga_mode_dout = {5'b0, fg_colour};
-                if (vga_mode_cs & we & cpu_clken)
-                    fg_colour <= dbo[2:0];
-            end
-            2'b10:
-            begin
-                vga_mode_dout = {5'b0, bg_colour};
-                if (vga_mode_cs & we & cpu_clken)
-                    bg_colour <= dbo[2:0];
-            end
-            default:
-                vga_mode_dout = 8'b0;
-            endcase
-        end
-    end
 
     //////////////////////////////////////////////////////////////////////////
     // CPU Data In MUX
@@ -256,8 +180,7 @@ module apple1(
     assign dbi = ram_cs      ? ram_dout :
                  rom_cs      ? rom_dout :
                  basic_cs    ? basic_dout :
-                 uart_cs     ? uart_dout :
-                 ps2kb_cs    ? ps2_dout :
-                 vga_mode_cs ? vga_mode_dout :
+                 display_cs  ? display_dout :
+                 ps2kb_cs    ? ps2_dout :                 
                  8'hFF;
 endmodule
