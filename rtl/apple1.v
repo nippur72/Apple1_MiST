@@ -46,9 +46,9 @@ module apple1(
     //////////////////////////////////////////////////////////////////////////
     // Registers and Wires
 
-    wire [15:0] ab;
-    wire [7:0] dbi;
-    wire [7:0] dbo;
+    wire [15:0] addr;
+    wire [7:0] cpu_din;
+    wire [7:0] cpu_dout;
     wire we;
 
     //////////////////////////////////////////////////////////////////////////
@@ -79,9 +79,9 @@ module apple1(
         .clk    (clk14),
         .enable (cpu_clken),
         .rst    (rst),
-        .ab     (ab),
-        .dbi    (dbi),
-        .dbo    (dbo),
+        .ab     (addr),
+        .dbi    (cpu_din),
+        .dbo    (cpu_dout),
         .we     (we),
         .irq_n  (1'b1),
         .nmi_n  (1'b1),
@@ -91,11 +91,11 @@ module apple1(
     //////////////////////////////////////////////////////////////////////////
     // Address Decoding
 
-    wire ram_cs      = (ab[15:13] ==  3'b000);              // 0x0000 -> 0x1FFF
-    wire keyboard_cs = (ab[15:1]  == 15'b110100000001000);  // 0xD010 -> 0xD011
-    wire display_cs  = (ab[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
-    wire basic_cs    = (ab[15:12] ==  4'b1110);             // 0xE000 -> 0xEFFF
-    wire rom_cs      = (ab[15:8]  ==  8'b11111111);         // 0xFF00 -> 0xFFFF
+    wire ram_cs      = (addr[15:13] ==  3'b000);              // 0x0000 -> 0x1FFF
+    wire keyboard_cs = (addr[15:1]  == 15'b110100000001000);  // 0xD010 -> 0xD011
+    wire display_cs  = (addr[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
+    wire basic_cs    = (addr[15:12] ==  4'b1110);             // 0xE000 -> 0xEFFF
+    wire rom_cs      = (addr[15:8]  ==  8'b11111111);         // 0xFF00 -> 0xFFFF
 
 	 wire [7:0] display_dout = 8'b0;   // display always returns ready on the control port
 	 
@@ -106,9 +106,9 @@ module apple1(
     wire [7:0] ram_dout;
     ram ram(
         .clk(clk14),
-        .address(ab[12:0]),
+        .address(addr[12:0]),
         .w_en(we & ram_cs),
-        .din(dbo),
+        .din(cpu_dout),
         .dout(ram_dout)
     );
 
@@ -116,7 +116,7 @@ module apple1(
     wire [7:0] rom_dout;
     rom_wozmon rom_wozmon(
         .clk(clk14),
-        .address(ab[7:0]),
+        .address(addr[7:0]),
         .dout(rom_dout)
     );
 
@@ -124,7 +124,7 @@ module apple1(
     wire [7:0] basic_dout;
     rom_basic rom_basic(
         .clk(clk14),
-        .address(ab[11:0]),
+        .address(addr[11:0]),
         .dout(basic_dout)
     );
 
@@ -139,7 +139,7 @@ module apple1(
         .key_clk(ps2_clk),
         .key_din(ps2_din),
         .cs(keyboard_cs),
-        .address(ab[0]),
+        .address(addr[0]),
         .dout(ps2_dout)
     );
 
@@ -154,9 +154,9 @@ module apple1(
         .vga_grn(vga_grn),
         .vga_blu(vga_blu),
 
-        .address(ab[0]),
+        .address(addr[0]),
         .w_en(we & display_cs),
-        .din(dbo),
+        .din(cpu_dout),
         .mode(2'b0),
         .fg_colour(3'd7),
         .bg_colour(3'd0),
@@ -167,10 +167,10 @@ module apple1(
     // CPU Data In MUX
 
     // link up chip selected device to cpu input
-    assign dbi = ram_cs      ? ram_dout :
-                 rom_cs      ? rom_dout :
-                 basic_cs    ? basic_dout :
-                 display_cs  ? display_dout :
-                 keyboard_cs ? ps2_dout :                 
-                 8'hFF;
+    assign cpu_din = ram_cs      ? ram_dout :
+                     rom_cs      ? rom_dout :
+                     basic_cs    ? basic_dout :
+                     display_cs  ? display_dout :
+                     keyboard_cs ? ps2_dout :                 
+                     8'hFF;
 endmodule
