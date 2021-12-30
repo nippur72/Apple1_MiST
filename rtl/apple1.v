@@ -167,10 +167,10 @@ module apple1(
     // CPU Data In MUX
 
     // link up chip selected device to cpu input
-    assign cpu_din = ram_cs      ? ram_dout :
-                     rom_cs      ? rom_dout :
-                     basic_cs    ? basic_dout :
+    assign cpu_din = ram_cs      ? ram_dout     :
+                     rom_cs      ? rom_dout     :
+                     basic_cs    ? basic_dout   :
                      display_cs  ? display_dout :
-                     keyboard_cs ? ps2_dout :                 
+                     keyboard_cs ? ps2_dout     :                 
                      8'hFF;
 endmodule
