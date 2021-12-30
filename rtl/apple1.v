@@ -34,7 +34,6 @@ module apple1(
     // I/O interface to keyboard
     input ps2_clk,              // PS/2 keyboard serial clock input
     input ps2_din,              // PS/2 keyboard serial data input
-    input ps2_select,           // Input to select the PS/2 keyboard instead of the UART
 
     // Outputs to VGA display
     output vga_h_sync,          // hozizontal VGA sync pulse
@@ -42,10 +41,7 @@ module apple1(
     output vga_red,             // red VGA signal
     output vga_grn,             // green VGA signal
     output vga_blu,             // blue VGA signal
-    input vga_cls,              // clear screen button
-
-    // Debugging ports
-    output [15:0] pc_monitor    // spy for program counter / debugging
+    input vga_cls               // clear screen button
 );
     //////////////////////////////////////////////////////////////////////////
     // Registers and Wires
@@ -89,21 +85,15 @@ module apple1(
         .we     (we),
         .irq_n  (1'b1),
         .nmi_n  (1'b1),
-        .ready  (cpu_clken),
-        .pc_monitor (pc_monitor)
+        .ready  (cpu_clken)        
     );
 
     //////////////////////////////////////////////////////////////////////////
     // Address Decoding
 
-    wire ram_cs =   (ab[15:13] ==  3'b000);              // 0x0000 -> 0x1FFF
-
-    // font mode, background and foreground colour
-    wire vga_mode_cs = (ab[15:2] == 14'b11000000000000); // 0xC000 -> 0xC003
-
-    wire keyboard_cs = (ab[15:1]  == 15'b110100000001000);     // 0xD010 -> 0xD011
-    wire display_cs  = (ab[15:1]  == 15'b110100000001001);     // 0xD012 -> 0xD013          
-    wire ps2kb_cs    = ps2_select & keyboard_cs;      
+    wire ram_cs      = (ab[15:13] ==  3'b000);              // 0x0000 -> 0x1FFF
+    wire keyboard_cs = (ab[15:1]  == 15'b110100000001000);  // 0xD010 -> 0xD011
+    wire display_cs  = (ab[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
     wire basic_cs    = (ab[15:12] ==  4'b1110);             // 0xE000 -> 0xEFFF
     wire rom_cs      = (ab[15:8]  ==  8'b11111111);         // 0xFF00 -> 0xFFFF
 
@@ -148,7 +138,7 @@ module apple1(
         .rst(rst),
         .key_clk(ps2_clk),
         .key_din(ps2_din),
-        .cs(ps2kb_cs),
+        .cs(keyboard_cs),
         .address(ab[0]),
         .dout(ps2_dout)
     );
@@ -181,6 +171,6 @@ module apple1(
                  rom_cs      ? rom_dout :
                  basic_cs    ? basic_dout :
                  display_cs  ? display_dout :
-                 ps2kb_cs    ? ps2_dout :                 
+                 keyboard_cs ? ps2_dout :                 
                  8'hFF;
 endmodule

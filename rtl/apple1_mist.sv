@@ -120,7 +120,6 @@ apple1 apple1
 	
 	.ps2_clk(ps2_kbd_clk),
 	.ps2_din(ps2_kbd_data),
-	.ps2_select(1'b1),
 
 	.vga_h_sync(hs),
    .vga_v_sync(vs),
@@ -128,8 +127,7 @@ apple1 apple1
 	.vga_grn(g),
 	.vga_blu(b),
 
-	.vga_cls(),         // clear screen button (not connected yet) 
-   .pc_monitor()       // debug program counter (not used)
+	.vga_cls()             // clear screen button (not connected yet) 
 );
 
 mist_video 
