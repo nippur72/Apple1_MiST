@@ -26,10 +26,6 @@ module apple1(
     input  clk14,               // 14 MHz master clock
     input  rst_n,               // active low synchronous reset (needed for simulation)
 
-    // I/O interface to computer
-    input  uart_rx,             // asynchronous serial data input from computer
-    output uart_tx,             // asynchronous serial data output to computer
-    output uart_cts,            // clear to send flag to computer
 	 // RAM interface
 	 output [15:0] ram_addr,
 	 output  [7:0] ram_din,

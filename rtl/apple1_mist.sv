@@ -147,10 +147,6 @@ apple1 apple1
 	.clk14(clk14),
 	.rst_n(~reset_button),
 	
-	.uart_rx(),             // uart not connected
-	.uart_tx(),             // uart not connected
-	.uart_cts(),            // uart not connected
-	
 	// RAM interface
 	.ram_addr (cpu_addr),
 	.ram_din  (cpu_dout),
