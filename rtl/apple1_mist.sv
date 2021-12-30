@@ -44,7 +44,7 @@ module apple1_mist(
 	output [1:0]  	SDRAM_BA, 		// SDRAM Bank Address
 	output 			SDRAM_CLK, 		// SDRAM Clock
 	output        	SDRAM_CKE, 		// SDRAM Clock Enable
-			
+	
 	// VGA interface
 	output  [5:0] VGA_R,
 	output  [5:0] VGA_G,
@@ -136,11 +136,37 @@ ram ram(
   .dout(ram_dout)
 );
 
+// WozMon ROM
+wire [7:0] rom_dout;
+rom_wozmon rom_wozmon(
+  .clk(clk14),
+  .address(cpu_addr[7:0]),
+  .dout(rom_dout)
+);
+
+// Basic ROM
+wire [7:0] basic_dout;
+rom_basic rom_basic(
+  .clk(clk14),
+  .address(cpu_addr[11:0]),
+  .dout(basic_dout)
+);
+
 // ram interface
 wire [15:0] cpu_addr;
 wire [7:0]  cpu_dout;
 wire        cpu_rd;
 wire        cpu_wr;
+
+wire ram_cs   = (cpu_addr[15:13] ==  3'b000);       // 0x0000 -> 0x1FFF
+wire basic_cs = (cpu_addr[15:12] ==  4'b1110);      // 0xE000 -> 0xEFFF
+wire rom_cs   = (cpu_addr[15:8]  ==  8'b11111111);  // 0xFF00 -> 0xFFFF
+
+wire [7:0] bus_dout = basic_cs ? basic_dout :
+                      rom_cs   ? rom_dout   :
+					       ram_cs   ? ram_dout   :
+					       8'b0;
+
 
 apple1 apple1 
 (
@@ -150,7 +176,7 @@ apple1 apple1
 	// RAM interface
 	.ram_addr (cpu_addr),
 	.ram_din  (cpu_dout),
-	.ram_dout (ram_dout),
+	.ram_dout (bus_dout),
 	.ram_rd   (cpu_rd),
 	.ram_wr   (cpu_wr),
 		
@@ -231,5 +257,66 @@ user_io (
 	.ps2_kbd_clk    (ps2_kbd_clk    ),              // ps2 keyboard from mist firmware 
 	.ps2_kbd_data   (ps2_kbd_data   )               // ps2 keyboard from mist firmware
 );
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @sdram *****************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+/*			
+// SDRAM control signals
+assign SDRAM_CKE = 1'b1;
+
+wire [24:0] sdram_addr;
+wire  [7:0] sdram_din;
+wire        sdram_wr;
+wire        sdram_rd;
+wire [7:0]  sdram_dout;
+
+always @(*) begin
+	if(is_downloading && download_wr) begin
+		sdram_addr   <= download_addr;
+		sdram_din    <= download_data;
+		sdram_wr     <= download_wr;
+		sdram_rd     <= 1'b1;			
+	end	
+	else if(eraser_busy) begin		
+		sdram_addr   <= eraser_addr;
+		sdram_din    <= eraser_data;
+		sdram_wr     <= eraser_wr;
+		sdram_rd     <= 1'b1;		
+	end	
+	else begin
+		sdram_addr   <= { 9'd0, cpu_addr[15:0] };
+		sdram_din    <= cpu_dout;		
+		sdram_wr     <= cpu_wr;
+		sdram_rd     <= cpu_rd;
+	end	
+end
+
+sdram sdram (
+	// interface to the MT48LC16M16 chip
+   .sd_data        ( SDRAM_DQ                  ),
+   .sd_addr        ( SDRAM_A                   ),
+   .sd_dqm         ( {SDRAM_DQMH, SDRAM_DQML}  ),
+   .sd_cs          ( SDRAM_nCS                 ),
+   .sd_ba          ( SDRAM_BA                  ),
+   .sd_we          ( SDRAM_nWE                 ),
+   .sd_ras         ( SDRAM_nRAS                ),
+   .sd_cas         ( SDRAM_nCAS                ),
+
+   // system interface
+   .clk            ( sys_clock                 ),
+   .clkref         ( cpu_clock                 ),
+   .init           ( !pll_locked               ),
+
+   // cpu interface
+   .din            ( sdram_din                 ),
+   .addr           ( sdram_addr                ),
+   .we             ( sdram_wr                  ),
+   .oe         	 ( sdram_rd                  ),
+   .dout           ( sdram_dout                )
+);
+*/
 
 endmodule 

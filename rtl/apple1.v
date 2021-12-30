@@ -99,32 +99,15 @@ assign ram_wr   = we & ram_cs;
     //////////////////////////////////////////////////////////////////////////
     // Address Decoding
 
-    wire ram_cs      = (addr[15:13] ==  3'b000);              // 0x0000 -> 0x1FFF
     wire keyboard_cs = (addr[15:1]  == 15'b110100000001000);  // 0xD010 -> 0xD011
     wire display_cs  = (addr[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
-    wire basic_cs    = (addr[15:12] ==  4'b1110);             // 0xE000 -> 0xEFFF
-    wire rom_cs      = (addr[15:8]  ==  8'b11111111);         // 0xFF00 -> 0xFFFF
+	 wire ram_cs = !keyboard_cs & !display_cs;
 
 	 wire [7:0] display_dout = 8'b0;   // display always returns ready on the control port
 	 
     //////////////////////////////////////////////////////////////////////////
     // RAM and ROM
 
-    // WozMon ROM
-    wire [7:0] rom_dout;
-    rom_wozmon rom_wozmon(
-        .clk(clk14),
-        .address(addr[7:0]),
-        .dout(rom_dout)
-    );
-
-    // Basic ROM
-    wire [7:0] basic_dout;
-    rom_basic rom_basic(
-        .clk(clk14),
-        .address(addr[11:0]),
-        .dout(basic_dout)
-    );
 
     //////////////////////////////////////////////////////////////////////////
     // Peripherals
@@ -165,10 +148,8 @@ assign ram_wr   = we & ram_cs;
     // CPU Data In MUX
 
     // link up chip selected device to cpu input
-    assign cpu_din = ram_cs      ? ram_dout     :
-                     rom_cs      ? rom_dout     :
-                     basic_cs    ? basic_dout   :
-                     display_cs  ? display_dout :
-                     keyboard_cs ? ps2_dout     :                 
-                     8'hFF;
+    assign cpu_din = display_cs  ? display_dout :
+                     keyboard_cs ? ps2_dout     :
+							ram_cs      ? ram_dout     :
+							8'hFF;
 endmodule
