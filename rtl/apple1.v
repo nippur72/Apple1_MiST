@@ -30,6 +30,12 @@ module apple1(
     input  uart_rx,             // asynchronous serial data input from computer
     output uart_tx,             // asynchronous serial data output to computer
     output uart_cts,            // clear to send flag to computer
+	 // RAM interface
+	 output [15:0] ram_addr,
+	 output  [7:0] ram_din,
+	 input   [7:0] ram_dout,
+	 output        ram_rd,
+ 	 output        ram_wr,
 
     // I/O interface to keyboard
     input ps2_clk,              // PS/2 keyboard serial clock input
@@ -43,6 +49,12 @@ module apple1(
     output vga_blu,             // blue VGA signal
     input vga_cls               // clear screen button
 );
+
+assign ram_addr = addr;
+assign ram_din  = cpu_dout;
+assign ram_rd   = ram_cs;
+assign ram_wr   = we & ram_cs;  
+
     //////////////////////////////////////////////////////////////////////////
     // Registers and Wires
 
@@ -101,16 +113,6 @@ module apple1(
 	 
     //////////////////////////////////////////////////////////////////////////
     // RAM and ROM
-
-    // RAM
-    wire [7:0] ram_dout;
-    ram ram(
-        .clk(clk14),
-        .address(addr[12:0]),
-        .w_en(we & ram_cs),
-        .din(cpu_dout),
-        .dout(ram_dout)
-    );
 
     // WozMon ROM
     wire [7:0] rom_dout;

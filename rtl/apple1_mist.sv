@@ -126,6 +126,22 @@ pll pll
 /******************************************************************************************/
 /******************************************************************************************/
 
+// RAM
+wire [7:0] ram_dout;
+ram ram(
+  .clk(clk14),
+  .address(cpu_addr[12:0]),
+  .w_en(cpu_wr),
+  .din(cpu_dout),
+  .dout(ram_dout)
+);
+
+// ram interface
+wire [15:0] cpu_addr;
+wire [7:0]  cpu_dout;
+wire        cpu_rd;
+wire        cpu_wr;
+
 apple1 apple1 
 (
 	.clk14(clk14),
@@ -135,6 +151,13 @@ apple1 apple1
 	.uart_tx(),             // uart not connected
 	.uart_cts(),            // uart not connected
 	
+	// RAM interface
+	.ram_addr (cpu_addr),
+	.ram_din  (cpu_dout),
+	.ram_dout (ram_dout),
+	.ram_rd   (cpu_rd),
+	.ram_wr   (cpu_wr),
+		
 	.ps2_clk(ps2_kbd_clk),
 	.ps2_din(ps2_kbd_data),
 
