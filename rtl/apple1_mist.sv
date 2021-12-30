@@ -4,20 +4,21 @@
 //
 //
 
-// TODO integrate with mist-modules
+// TODO make it work with SDRAM
 // TODO load binary files into memory
-// TODO support ACI interface for load and save
-// TODO additional RAM with SDRAM
-// TODO reset key from keyboard
-// TODO cls key from keyboard
-// TODO power on-off
-// TODO special expansion boards: TMS9918, SID
-// TODO white/green/amber switch?
+// TODO use 7 MHz clock in display
+// TODO isolate ps2 keyboard from apple1
+// TODO check ps2 clock
+// TODO ram refresh lost cycles
+// TODO check display parameters vs real apple1
+// TODO reset and cls key from keyboard
+// TODO power on-off key ? (init ram)
 // TODO reset if pll not locked
 // TODO rename "vga" into "display"
 // TODO reorganize file structure
-// TODO check ps2 clock
-
+// TODO integrate with mist-modules
+// TODO support ACI interface for load and save
+// TODO special expansion boards: TMS9918, SID
 
 module apple1_mist(
    input         CLOCK_27,
@@ -26,9 +27,9 @@ module apple1_mist(
 	input         SPI_SCK,
 	output        SPI_DO,
 	input         SPI_DI,
-	//input         SPI_SS2,
+ //input         SPI_SS2,
 	input         SPI_SS3,
-	//input 		  SPI_SS4,
+ //input 		  SPI_SS4,
 	input         CONF_DATA0,
 	
 	// SDRAM interface
@@ -70,7 +71,7 @@ localparam CONF_STR = {
 	"APPLE 1;;",
 	"O34,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
 	"T6,Reset;",
-	"V,v1.00.",`BUILD_DATE
+	"V,v1.01.",`BUILD_DATE
 };
 
 localparam conf_str_len = $size(CONF_STR)>>3;
@@ -79,7 +80,7 @@ wire st_reset_switch = buttons[1];
 wire st_menu_reset   = status[6];
 
 wire clk14;     // the 14.31818 MHz clock
-wire clk_osd;   // x4 clock for the OSD menu
+wire clk_osd;   // x2 clock for the OSD menu
 wire r, g, b;
 wire hs, vs;
 
@@ -133,36 +134,36 @@ apple1 apple1
 
 mist_video 
 #(
-	.COLOR_DEPTH(1),
-	.OSD_AUTO_CE(1)
+	.COLOR_DEPTH(1),    // 1 bit color depth
+	.OSD_AUTO_CE(1)     // OSD autodetects clock enable
 )
 mist_video
 (
-	.clk_sys(clk_osd),    // 2x the VDP clock for the scandoubler
+	.clk_sys(clk_osd),    // OSD needs 2x the VDP clock for the scandoubler
 	
 	// OSD SPI interface
 	.SPI_DI(SPI_DI),
 	.SPI_SCK(SPI_SCK),
 	.SPI_SS3(SPI_SS3),
 		
-	.scanlines(2'b00),           // scanlines (00-none 01-25% 10-50% 11-75%)	
-	.ce_divider(1),              // non-scandoubled pixel clock divider 0 - clk_sys/4, 1 - clk_sys/2
-	.scandoubler_disable(scandoubler_disable),
-	
-	.no_csync(no_csync),                         // 1 = disable csync without scandoubler	
-	.ypbpr(ypbpr),                               // 1 = YPbPr output on composite sync
+	.scanlines(2'b00),                           // scanline emulation disabled for now
+	.ce_divider(1),                              // non-scandoubled pixel clock divider 0 - clk_sys/4, 1 - clk_sys/2
 
-	.rotate(2'b00),              // Rotate OSD [0] - rotate [1] - left or right	
-	.blend(0),                   // composite-like blending
+	.scandoubler_disable(scandoubler_disable),   // disable scandoubler option from mist.ini	
+	.no_csync(no_csync),                         // csync option from mist.ini
+	.ypbpr(ypbpr),                               // YPbPr option from mist.ini
+
+	.rotate(2'b00),                              // no ODS rotation
+	.blend(0),                                   // composite-like blending
 	
-	// video input	
+	// video input	signals to mist_video
 	.R(r),
 	.G(g),
 	.B(b),
 	.HSync(hs),
 	.VSync(vs),
 	
-	// MiST video output signals
+	// video output signals that go into MiST hardware
 	.VGA_R(VGA_R),
 	.VGA_G(VGA_G),
 	.VGA_B(VGA_B),
@@ -189,13 +190,12 @@ user_io (
 	.buttons        (buttons        ),
 	.switches   	 (switches       ),
 
-	.scandoubler_disable ( scandoubler_disable ),
-	.ypbpr               ( ypbpr               ),
-	.no_csync            ( no_csync            ),
-	
-	// ps2 interface
-	.ps2_kbd_clk    (ps2_kbd_clk    ),
-	.ps2_kbd_data   (ps2_kbd_data   )
+	.scandoubler_disable ( scandoubler_disable ),   // get this option from mist.ini
+	.ypbpr               ( ypbpr               ),   // get this option from mist.ini
+	.no_csync            ( no_csync            ),   // get this option from mist.ini
+		
+	.ps2_kbd_clk    (ps2_kbd_clk    ),              // ps2 keyboard from mist firmware 
+	.ps2_kbd_data   (ps2_kbd_data   )               // ps2 keyboard from mist firmware
 );
 
 endmodule 

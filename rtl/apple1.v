@@ -23,7 +23,7 @@
 //
 
 module apple1(
-    input  clk14,               // 25 MHz master clock
+    input  clk14,               // 14 MHz master clock
     input  rst_n,               // active low synchronous reset (needed for simulation)
 
     // I/O interface to computer
