@@ -1,4 +1,4 @@
-module vga (
+module display (
     input clk14,            // clock signal
     input enable,           // clock enable strobe,
     input rst,              // active high reset signal

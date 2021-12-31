@@ -124,7 +124,7 @@ assign ram_wr   = we & ram_cs;
         .dout(ps2_dout)
     );
 
-    vga vga(
+    display display(
         .clk14(clk14),
         .enable(display_cs & cpu_clken),
         .rst(rst),

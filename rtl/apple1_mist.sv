@@ -4,8 +4,8 @@
 //
 //
 
-// TODO make it work with SDRAM
 // TODO load binary files into memory
+// TODO make it work with SDRAM
 // TODO use 7 MHz clock in display
 // TODO isolate ps2 keyboard from apple1
 // TODO check ps2 clock
@@ -14,11 +14,11 @@
 // TODO reset and cls key from keyboard
 // TODO power on-off key ? (init ram)
 // TODO reset if pll not locked
-// TODO rename "vga" into "display"
 // TODO reorganize file structure
 // TODO integrate with mist-modules
 // TODO support ACI interface for load and save
 // TODO special expansion boards: TMS9918, SID
+// TODO ascii keyboard
 
 module apple1_mist(
    input         CLOCK_27,
