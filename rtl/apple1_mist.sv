@@ -19,6 +19,7 @@
 // TODO support ACI interface for load and save
 // TODO special expansion boards: TMS9918, SID
 // TODO ascii keyboard
+// TODO check diff with updated data_io.v
 
 module apple1_mist(
    input         CLOCK_27,
@@ -27,9 +28,9 @@ module apple1_mist(
 	input         SPI_SCK,
 	output        SPI_DO,
 	input         SPI_DI,
- //input         SPI_SS2,
+   input         SPI_SS2,
 	input         SPI_SS3,
- //input 		  SPI_SS4,
+   input 		  SPI_SS4,
 	input         CONF_DATA0,
 	
 	// SDRAM interface
@@ -68,7 +69,9 @@ module apple1_mist(
 /******************************************************************************************/
 
 localparam CONF_STR = {
-	"APPLE 1;;",
+	"APPLE 1;;",              // 0 download index for "apple1.rom"  
+   "F,PRG,Load program;",    // 1 download index for ".prg" files
+	"F,ROM,Load firmware;",   // 2 download index for ".rom" files
 	"O34,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
 	"T6,Reset;",
 	"V,v1.01.",`BUILD_DATE
@@ -95,8 +98,6 @@ wire no_csync;
 wire ps2_kbd_clk;
 wire ps2_kbd_data;
 
-assign LED = 1;
-
 wire reset_button = status[0] | st_menu_reset | st_reset_switch | !pll_locked;
 
 /******************************************************************************************/
@@ -122,19 +123,96 @@ pll pll
 
 /******************************************************************************************/
 /******************************************************************************************/
+/***************************************** @downloader ************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+wire        is_downloading;      // indicates that downloader is working
+wire [24:0] download_addr;       // download address
+wire [7:0]  download_data;       // download data
+wire        download_wr;         // download write enable
+wire        ROM_loaded;          // 1 when boot rom has been downloaded
+
+// ROM download helper
+downloader 
+#(
+   .BOOT_INDEX (0),    // menu index 0 is for automatic download of "apple1.rom" at FPGA boot 
+	.PRG_INDEX  (1),    // menu index for load .prg
+	.ROM_INDEX  (2),    // menu index for load .prg	
+	.ROM_START_ADDR(0)  // start of ROM (bank 0 of SDRAM)
+)
+downloader 
+(	
+	// new SPI interface
+   .SPI_DO ( SPI_DO  ),
+	.SPI_DI ( SPI_DI  ),
+   .SPI_SCK( SPI_SCK ),
+   .SPI_SS2( SPI_SS2 ),
+   .SPI_SS3( SPI_SS3 ),
+   .SPI_SS4( SPI_SS4 ),
+	
+	// signal indicating an active rom download
+	.downloading ( is_downloading  ),
+   .ROM_done    ( ROM_loaded      ),	
+	         
+   // external ram interface
+   .clk     ( clk14         ),
+	.clk_ena ( 1             ),
+   .wr      ( download_wr   ),
+   .addr    ( download_addr ),
+   .data    ( download_data )	
+);
+
+/******************************************************************************************/
+/******************************************************************************************/
 /***************************************** @apple1 ****************************************/
 /******************************************************************************************/
 /******************************************************************************************/
 
 // RAM
-wire [7:0] ram_dout;
 ram ram(
-  .clk(clk14),
-  .address(cpu_addr[12:0]),
-  .w_en(cpu_wr),
-  .din(cpu_dout),
-  .dout(ram_dout)
+  .clk    (clk14     ),
+  .address(sdram_addr[12:0]),
+  .w_en   (sdram_wr  ),
+  .din    (sdram_din ),
+  .dout   (sdram_dout)
 );
+
+// SDRAM control signals
+//assign SDRAM_CKE = 1'b1;
+
+wire [24:0] sdram_addr;
+wire  [7:0] sdram_din;
+wire        sdram_wr;
+wire        sdram_rd;
+wire [7:0]  sdram_dout;
+
+assign dummy = is_downloading && download_wr;
+
+always @(*) begin
+	if(is_downloading && download_wr) begin
+		sdram_addr   <= download_addr;
+		sdram_din    <= download_data;
+		sdram_wr     <= download_wr;
+		sdram_rd     <= 1'b1;	      
+	end
+   /*	
+	else if(eraser_busy) begin		
+		sdram_addr   <= eraser_addr;
+		sdram_din    <= eraser_data;
+		sdram_wr     <= eraser_wr;
+		sdram_rd     <= 1'b1;		
+	end	
+	*/
+	else begin
+		sdram_addr   <= { 12'b0, cpu_addr[12:0] };
+		sdram_din    <= cpu_dout;		
+		sdram_wr     <= cpu_wr;
+		sdram_rd     <= cpu_rd;		
+	end	
+end
+
+assign LED = ~dummy;
 
 // WozMon ROM
 wire [7:0] rom_dout;
@@ -164,7 +242,7 @@ wire rom_cs   = (cpu_addr[15:8]  ==  8'b11111111);  // 0xFF00 -> 0xFFFF
 
 wire [7:0] bus_dout = basic_cs ? basic_dout :
                       rom_cs   ? rom_dout   :
-					       ram_cs   ? ram_dout   :
+					       ram_cs   ? sdram_dout :
 					       8'b0;
 
 
