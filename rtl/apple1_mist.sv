@@ -20,6 +20,7 @@
 // TODO special expansion boards: TMS9918, SID
 // TODO ascii keyboard
 // TODO check diff with updated data_io.v
+// TODO ram + display powerup initial values
 
 module apple1_mist(
    input         CLOCK_27,
@@ -172,7 +173,7 @@ downloader
 // RAM
 ram ram(
   .clk    (clk14     ),
-  .address(sdram_addr[12:0]),
+  .address(sdram_addr[15:0]),
   .w_en   (sdram_wr  ),
   .din    (sdram_din ),
   .dout   (sdram_dout)
@@ -205,7 +206,7 @@ always @(*) begin
 	end	
 	*/
 	else begin
-		sdram_addr   <= { 12'b0, cpu_addr[12:0] };
+		sdram_addr   <= { 9'b0, cpu_addr[15:0] };
 		sdram_din    <= cpu_dout;		
 		sdram_wr     <= cpu_wr;
 		sdram_rd     <= cpu_rd;		
@@ -236,9 +237,9 @@ wire [7:0]  cpu_dout;
 wire        cpu_rd;
 wire        cpu_wr;
 
-wire ram_cs   = (cpu_addr[15:13] ==  3'b000);       // 0x0000 -> 0x1FFF
-wire basic_cs = (cpu_addr[15:12] ==  4'b1110);      // 0xE000 -> 0xEFFF
-wire rom_cs   = (cpu_addr[15:8]  ==  8'b11111111);  // 0xFF00 -> 0xFFFF
+wire ram_cs   = cpu_addr < 16'hc000;                          //  (cpu_addr[15:13] ==  3'b000);       // 0x0000 -> 0x1FFF
+wire basic_cs = cpu_addr >= 16'hE000 && cpu_addr <= 16'hEFFF; //  (cpu_addr[15:12] ==  4'b1110);      // 0xE000 -> 0xEFFF
+wire rom_cs   = cpu_addr >= 16'hFF00 && cpu_addr <= 16'hFFFF; //  (cpu_addr[15:8]  ==  8'b11111111);  // 0xFF00 -> 0xFFFF
 
 wire [7:0] bus_dout = basic_cs ? basic_dout :
                       rom_cs   ? rom_dout   :

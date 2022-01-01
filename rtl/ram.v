@@ -24,16 +24,16 @@
 
 module ram (
     input clk,              // clock signal
-    input [12:0] address,   // address bus
+    input [15:0] address,   // address bus
     input w_en,             // active high write enable strobe
     input [7:0] din,        // 8-bit data bus (input)
     output reg [7:0] dout   // 8-bit data bus (output)
 );
 
-    reg [7:0] ram_data[0:8191];
+    reg [7:0] ram_data[0:49151];
 
-    initial
-        $readmemh("roms/ram.hex", ram_data, 0, 8191);
+    //initial
+    //    $readmemh("roms/ram.hex", ram_data, 0, 8191);
 
     always @(posedge clk)
     begin
