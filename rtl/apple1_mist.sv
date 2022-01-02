@@ -116,8 +116,8 @@ wire reset_button = status[0] | st_menu_reset | st_reset_switch | !pll_locked;
 
 wire pll_locked;
 
-wire sdram_clock;        // cpu x 8 for sdram.v interface
-wire sdram_clock_ph;     // cpu x 8 phase shifted -2.5 ns   	
+wire sdram_clock;        // cpu x 7 x 8 for sdram.v interface
+wire sdram_clock_ph;     // cpu x 7 x 8 phase shifted -2.5 ns   	
 
 pll pll 
 (
@@ -125,9 +125,8 @@ pll pll
 	.locked(pll_locked),
 	.c0(clk_osd),           // x2 clock for OSD menu
 	.c1(clk7),	            // 7.15909 MHz (14.318180/2)		
-   .c2( sdram_clock    ),  // cpu x 8   
-	.c3( sdram_clock_ph )   // cpu x 8 phase shifted -2.5 ns   	
-
+   .c2( sdram_clock    ),  // cpu x 7 x 8   
+	.c3( sdram_clock_ph )   // cpu x 7 x 8 phase shifted -2.5 ns   	
 );
 
 /******************************************************************************************/
@@ -165,7 +164,7 @@ downloader
    .ROM_done    ( ROM_loaded      ),	
 	         
    // external ram interface
-   .clk     ( clk7         ),
+   .clk     ( clk7          ),
 	.clk_ena ( cpu_clken     ),
    .wr      ( download_wr   ),
    .addr    ( download_addr ),
