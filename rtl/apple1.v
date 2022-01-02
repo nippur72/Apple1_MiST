@@ -103,9 +103,11 @@ assign ram_wr   = we & ram_cs;
     );
 
     display display(
-        .clk(pixel_clock),
-        .enable(display_cs & cpu_clken),
-        .rst(reset),
+	     .reset(reset),
+		  
+        .pixel_clock(pixel_clock),
+		  .pixel_clken(1),
+        .cpu_clken(cpu_clken & display_cs),        
 
         .vga_h_sync(vga_h_sync),
         .vga_v_sync(vga_v_sync),

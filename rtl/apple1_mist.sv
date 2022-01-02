@@ -27,6 +27,7 @@
 // TODO display: reduce to 512 bytes font
 // TODO display: use 7 MHz clock
 // TODO display: check parameters vs real apple1
+// TODO display: check cursor blinking
 
 
 module apple1_mist(
@@ -417,7 +418,6 @@ sdram sdram (
 
 wire cpu_clken;  // provides the cpu clock enable signal derived from main clock
 
-//wire cpu_clken;
 clock clock(
   .sys_clock( sdram_clock   ),   // input: main clock
   .reset    ( reset_button  ),   // input: reset signal

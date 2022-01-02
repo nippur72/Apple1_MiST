@@ -1,7 +1,10 @@
 module display (
-    input clk,              // 7 MHz clock signal
-	 input rst,              // active high reset signal	 
-    input enable,           // clock enable strobe,
+	 input reset,            // active high reset signal	 
+	 
+    input pixel_clock,      // 7 MHz clock signal
+	 input pixel_clken,      // pixel clock enable
+	 
+    input cpu_clken,        // clock cpu_clken strobe,
 
 	 input clr_screen,       // clear screen button
 	 
@@ -70,13 +73,14 @@ module display (
     wire v_active = (v_cnt >= vbp && v_cnt < vfp);
 
     // horizontal and vertical counters
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    always @(posedge pixel_clock or posedge reset) begin
+        if (reset) begin
             h_cnt <= 10'd0;
             v_cnt <= 10'd0;
             v_dot <= 5'd0;
         end
-        else begin
+        else 
+		  if(pixel_clken) begin
             if (h_cnt < h_pixels)
                 h_cnt <= h_cnt + 1;
             else begin
@@ -108,7 +112,7 @@ module display (
     // Character ROM
 
     font_rom font_rom(
-        .clk(clk),        
+        .clk(pixel_clock),        
         .character(font_char),
         .pixel(font_pixel),
         .line(font_line),
@@ -119,7 +123,7 @@ module display (
     // Video RAM
 
     vram vram(
-        .clk(clk),
+        .clk(pixel_clock),
         .read_addr(vram_r_addr),
         .write_addr(vram_w_addr),
         .r_en(h_active),
@@ -131,12 +135,13 @@ module display (
     //////////////////////////////////////////////////////////////////////////
     // Video Signal Generation
 
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    always @(posedge pixel_clock or posedge reset) begin
+        if (reset) begin
             vram_h_addr <= 0;
             vram_v_addr <= 0;
         end 
-		  else begin
+		  else 
+		  if(pixel_clken) begin
             // start the pipeline for reading vram and font details
             // 3 pixel clock cycles early
             if (h_dot == 6)
@@ -157,12 +162,12 @@ module display (
 
     reg blink;
     reg [22:0] blink_div;
-    always @(posedge clk or posedge rst)
+    always @(posedge pixel_clock or posedge reset)
     begin
-        if (rst)
+        if (reset)
             blink_div <= 0;
         else
-        begin
+		  if(pixel_clken) begin
             blink_div <= blink_div + 1;
 
             if (blink_div == 23'd0)
@@ -178,8 +183,8 @@ module display (
     assign vram_r_addr = {vram_v_addr, vram_h_addr};
 
     assign font_char = (vram_r_addr != cursor) ? vram_dout : (blink) ? 6'd0 : 6'd32;
-    assign font_pixel = h_dot;     // offset by one to get pixel into right cycle,
-                                   // font output one pixel clk behind
+    assign font_pixel = h_dot;     
+                                   
     assign font_line = v_dot * 2 + 4;
 
     // vga signals out to monitor
@@ -195,9 +200,9 @@ module display (
 
     assign vram_clr_addr = vram_end_addr + {3'd0, vram_v_addr[1:0]};
 
-    always @(posedge clk or posedge rst)
+    always @(posedge pixel_clock or posedge reset)
     begin
-        if (rst)
+        if (reset)
         begin
             h_cursor <= 6'd0;
             v_cursor <= 5'd0;
@@ -206,7 +211,7 @@ module display (
             vram_end_addr <= 5'd24;
         end
         else
-        begin
+        if(pixel_clken) begin
             vram_w_en <= 0;
 
             if (clr_screen)
@@ -240,7 +245,7 @@ module display (
 
                 if (address == 1'b0) // address low == TX register
                 begin
-                    if (enable & w_en & ~char_seen)
+                    if (cpu_clken & w_en & ~char_seen)
                     begin
                         // incoming character
                         char_seen <= 1;
@@ -269,7 +274,7 @@ module display (
                         end
                         endcase
                     end
-                    else if(~enable & ~w_en)
+                    else if(~cpu_clken & ~w_en)
                         char_seen <= 0;
                 end
                 else
