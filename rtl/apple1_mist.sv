@@ -4,20 +4,16 @@
 //
 //
 
-// TODO clean reset, reset_n
-// TODO take power reset
-// TODO take out cpu clock enable 
-// TODO make ram work with clock enable
-// TODO load binary files into memory
 // TODO make it work with SDRAM
+// TODO make ram work with clock enable
 // TODO ram refresh lost cycles
 // TODO power on-off key ? (init ram)
 // TODO ram powerup initial values
-// TODO reset if pll not locked
 // TODO reorganize file structure
 // TODO support ACI interface for load and save
 // TODO special expansion boards: TMS9918, SID, AY?
 // TODO check diff with updated data_io.v and other modules
+// TODO osd menu yellow, why it doesn't work?
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
 // TODO keyboard: reset and cls key
@@ -25,7 +21,6 @@
 // TODO display: powerup values
 // TODO display: simplify rom font
 // TODO display: reduce to 512 bytes font
-// TODO display: use 7 MHz clock
 // TODO display: check parameters vs real apple1
 // TODO display: check cursor blinking
 
@@ -115,18 +110,17 @@ wire reset_button = status[0] | st_menu_reset | st_reset_switch | !pll_locked;
 
 wire pll_locked;
 
-wire pixel_clock;        // the 14.31818 MHz clock
-wire clk_osd;            // x2 clock for the OSD menu
-wire sdram_clock;        // cpu x 7 x 8 for sdram.v interface
+wire sys_clock;          // cpu x 7 x 8 system clock (sdram.v)
+wire osd_clock;          // cpu x 7 x 2 for the OSD menu
 wire sdram_clock_ph;     // cpu x 7 x 8 phase shifted -2.5 ns   	
 
 pll pll 
 (
 	.inclk0(CLOCK_27),
 	.locked(pll_locked),
-	.c0( clk_osd        ),  // x2 video clock for OSD menu
-	.c1( pixel_clock    ),	// 7.15909 MHz (14.318180/2)		
-   .c2( sdram_clock    ),  // cpu x 7 x 8   
+	
+	.c0( osd_clock      ),  // cpu x 7 x 2 video clock for OSD menu
+   .c2( sys_clock      ),  // cpu x 7 x 8 system clock (sdram.v)
 	.c3( sdram_clock_ph )   // cpu x 7 x 8 phase shifted -2.5 ns   	
 );
 
@@ -165,7 +159,7 @@ downloader
    .ROM_done    ( ROM_loaded      ),	
 	         
    // external ram interface
-   .clk     ( sdram_clock   ),
+   .clk     ( sys_clock     ),
 	.clk_ena ( cpu_clken     ),
    .wr      ( download_wr   ),
    .addr    ( download_addr ),
@@ -180,8 +174,8 @@ downloader
 
 // RAM
 ram ram(
-  .clk    (sdram_clock),
-  .ena    (cpu_clken ),
+  .clk    (sys_clock ),
+  .ena    (cpu_clken ),       // fake does not work
   .address(sdram_addr[15:0]),
   .w_en   (sdram_wr  ),
   .din    (sdram_din ),
@@ -226,7 +220,7 @@ assign LED = ~dummy;
 // WozMon ROM
 wire [7:0] rom_dout;
 rom_wozmon rom_wozmon(
-  .clk(sdram_clock),
+  .clk(sys_clock),
   .address(cpu_addr[7:0]),
   .dout(rom_dout)
 );
@@ -234,7 +228,7 @@ rom_wozmon rom_wozmon(
 // Basic ROM
 wire [7:0] basic_dout;
 rom_basic rom_basic(
-  .clk(sdram_clock),
+  .clk(sys_clock),
   .address(cpu_addr[11:0]),
   .dout(basic_dout)
 );
@@ -258,10 +252,9 @@ apple1 apple1
 (  
 	.reset(reset_button), 
 	
-	.sys_clock(sdram_clock),   // system clock
-	.pixel_clock(pixel_clock), // pixel clock 7 Mhz
-	.cpu_clken(cpu_clken),     // CPU clock enable	
-	.pixel_clken(pixel_clken), // pixel clock enable
+	.sys_clock   ( sys_clock   ),  // system clock
+	.cpu_clken   ( cpu_clken   ),  // CPU clock enable	
+	.pixel_clken ( pixel_clken ),  // pixel clock enable
 	
 	// RAM interface
 	.ram_addr (cpu_addr),
@@ -282,14 +275,22 @@ apple1 apple1
 	.vga_cls()             // clear screen button (not connected yet) 
 );
 
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @mist_video ************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
 mist_video 
 #(
 	.COLOR_DEPTH(1),    // 1 bit color depth
-	.OSD_AUTO_CE(1)     // OSD autodetects clock enable
+	.OSD_AUTO_CE(1),    // OSD autodetects clock enable
+	.OSD_COLOR(3'b110)  // yellow menu color
 )
 mist_video
 (
-	.clk_sys(clk_osd),    // OSD needs 2x the VDP clock for the scandoubler
+	.clk_sys(osd_clock),    // OSD needs 2x the VDP clock for the scandoubler
 	
 	// OSD SPI interface
 	.SPI_DI(SPI_DI),
@@ -321,6 +322,12 @@ mist_video
 	.VGA_HS(VGA_HS),	
 );
 
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @user_io ***************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
 user_io 
 #(
 	.STRLEN(conf_str_len)
@@ -329,7 +336,7 @@ user_io
 user_io (
    .conf_str       (CONF_STR       ),
 	
-	.clk_sys        (sdram_clock    ),
+	.clk_sys        (sys_clock      ),
 	
 	.SPI_CLK        (SPI_SCK        ),
 	.SPI_SS_IO      (CONF_DATA0     ),	
@@ -356,7 +363,7 @@ user_io (
 			
 // SDRAM control signals
 assign SDRAM_CKE = 1'b1;
-assign SDRAM_CLK = sdram_clock_ph;
+assign SDRAM_CLK = sdram_clock_ph;  // same as sys_clock but with -2.5 ns phase
 
 /*
 wire [24:0] sdram_addr;
@@ -421,7 +428,7 @@ wire cpu_clken;    // provides the cpu clock enable signal derived from main clo
 wire pixel_clken;  // provides the cpu clock enable signal derived from main clock
 
 clock clock(
-  .sys_clock  ( sdram_clock   ),   // input: main clock
+  .sys_clock  ( sys_clock   ),     // input: main clock
   .reset      ( reset_button  ),   // input: reset signal
   
   .cpu_clken  ( cpu_clken     ),   // output: cpu clock enable

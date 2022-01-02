@@ -1,10 +1,9 @@
 module display (
 	 input reset,            // active high reset signal	 
 	 
-    input pixel_clock,      // 7 MHz clock signal
-	 input pixel_clken,      // pixel clock enable
-	 
-    input cpu_clken,        // clock cpu_clken strobe,
+    input sys_clock,        // system clock
+	 input pixel_clken,      // pixel clock enable	 
+    input cpu_clken,        // cpu clock enable
 
 	 input clr_screen,       // clear screen button
 	 
@@ -73,7 +72,7 @@ module display (
     wire v_active = (v_cnt >= vbp && v_cnt < vfp);
 
     // horizontal and vertical counters
-    always @(posedge pixel_clock or posedge reset) begin
+    always @(posedge sys_clock or posedge reset) begin
         if (reset) begin
             h_cnt <= 10'd0;
             v_cnt <= 10'd0;
@@ -112,7 +111,7 @@ module display (
     // Character ROM
 
     font_rom font_rom(
-        .clk(pixel_clock),        
+        .clk(sys_clock),        
         .character(font_char),
         .pixel(font_pixel),
         .line(font_line),
@@ -123,7 +122,7 @@ module display (
     // Video RAM
 
     vram vram(
-        .clk(pixel_clock),
+        .clk(sys_clock),
         .read_addr(vram_r_addr),
         .write_addr(vram_w_addr),
         .r_en(h_active),
@@ -135,7 +134,7 @@ module display (
     //////////////////////////////////////////////////////////////////////////
     // Video Signal Generation
 
-    always @(posedge pixel_clock or posedge reset) begin
+    always @(posedge sys_clock or posedge reset) begin
         if (reset) begin
             vram_h_addr <= 0;
             vram_v_addr <= 0;
@@ -162,7 +161,7 @@ module display (
 
     reg blink;
     reg [22:0] blink_div;
-    always @(posedge pixel_clock or posedge reset)
+    always @(posedge sys_clock or posedge reset)
     begin
         if (reset)
             blink_div <= 0;
@@ -200,7 +199,7 @@ module display (
 
     assign vram_clr_addr = vram_end_addr + {3'd0, vram_v_addr[1:0]};
 
-    always @(posedge pixel_clock or posedge reset)
+    always @(posedge sys_clock or posedge reset)
     begin
         if (reset)
         begin
