@@ -27,6 +27,7 @@ module apple1(
 	 
     input  sys_clock,           // system clock
 	 input  pixel_clock,         // 7 MHz pixel clock 
+	 input  pixel_clken,         // 7 MHz pixel clock 
 	 input  cpu_clken,           // cpu clock enable
     
 	 // RAM interface
@@ -105,8 +106,8 @@ assign ram_wr   = we & ram_cs;
     display display(
 	     .reset(reset),
 		  
-        .pixel_clock(pixel_clock),
-		  .pixel_clken(1),
+        .pixel_clock(sys_clock),
+		  .pixel_clken(pixel_clken),
         .cpu_clken(cpu_clken & display_cs),        
 
         .vga_h_sync(vga_h_sync),

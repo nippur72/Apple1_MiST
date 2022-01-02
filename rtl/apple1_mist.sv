@@ -261,6 +261,7 @@ apple1 apple1
 	.sys_clock(sdram_clock),   // system clock
 	.pixel_clock(pixel_clock), // pixel clock 7 Mhz
 	.cpu_clken(cpu_clken),     // CPU clock enable	
+	.pixel_clken(pixel_clken), // pixel clock enable
 	
 	// RAM interface
 	.ram_addr (cpu_addr),
@@ -416,12 +417,15 @@ sdram sdram (
 /******************************************************************************************/
 /******************************************************************************************/
 
-wire cpu_clken;  // provides the cpu clock enable signal derived from main clock
+wire cpu_clken;    // provides the cpu clock enable signal derived from main clock
+wire pixel_clken;  // provides the cpu clock enable signal derived from main clock
 
 clock clock(
-  .sys_clock( sdram_clock   ),   // input: main clock
-  .reset    ( reset_button  ),   // input: reset signal
-  .cpu_clken( cpu_clken     )    // output: cpu clock enable
+  .sys_clock  ( sdram_clock   ),   // input: main clock
+  .reset      ( reset_button  ),   // input: reset signal
+  
+  .cpu_clken  ( cpu_clken     ),   // output: cpu clock enable
+  .pixel_clken( pixel_clken   )    // output: pixel clock enable
 );
 
 endmodule 
