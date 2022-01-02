@@ -105,11 +105,7 @@ assign ram_wr   = we & ram_cs;
     wire display_cs  = (addr[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
 	 wire ram_cs = !keyboard_cs & !display_cs;
 
-	 wire [7:0] display_dout = 8'b0;   // display always returns ready on the control port
-	 
-    //////////////////////////////////////////////////////////////////////////
-    // RAM and ROM
-
+	 wire [7:0] display_dout = 8'b0;   // display always returns ready on the control port	   
 
     //////////////////////////////////////////////////////////////////////////
     // Peripherals
