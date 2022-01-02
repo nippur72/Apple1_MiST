@@ -22,13 +22,13 @@ module display (
     // Registers and Parameters
 
     // video structure constants
-    parameter h_pixels = 910;    // horizontal pixels per line
-    parameter v_lines  = 262;    // vertical lines per frame
-    parameter h_pulse  = 65;     // hsync pulse length (was: 96)
-    parameter v_pulse  = 2;      // vsync pulse length
+    parameter h_pixels = 910;    // horizontal pixels per line    
+    parameter h_pulse  = 65;     // hsync pulse length 
     parameter hbp      = 208;    // end of horizontal back porch
-    parameter hfp      = 848;    // beginning of horizontal front porch
-    parameter vbp      = 42;     // end of vertical back porch
+    parameter hfp      = 848;    // beginning of horizontal front porch	 
+    parameter v_lines  = 262;    // vertical lines per frame
+    parameter v_pulse  = 2;      // vsync pulse length    
+	 parameter vbp      = 42;     // end of vertical back porch
     parameter vfp      = 234;    // beginning of vertical front porch
 
     // registers for storing the horizontal & vertical counters
@@ -109,8 +109,7 @@ module display (
     // Character ROM
 
     font_rom font_rom(
-        .clk(clk),
-        .mode(2'b0),
+        .clk(clk),        
         .character(font_char),
         .pixel(font_pixel),
         .line(font_line),
