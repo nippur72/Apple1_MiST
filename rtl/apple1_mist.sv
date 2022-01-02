@@ -4,23 +4,26 @@
 //
 //
 
+// TODO make ram work with clock enable
 // TODO load binary files into memory
 // TODO make it work with SDRAM
-// TODO use 7 MHz clock in display
-// TODO isolate ps2 keyboard from apple1
-// TODO check ps2 clock
 // TODO ram refresh lost cycles
-// TODO check display parameters vs real apple1
-// TODO reset and cls key from keyboard
 // TODO power on-off key ? (init ram)
+// TODO ram powerup initial values
 // TODO reset if pll not locked
 // TODO reorganize file structure
-// TODO integrate with mist-modules
 // TODO support ACI interface for load and save
-// TODO special expansion boards: TMS9918, SID
-// TODO ascii keyboard
-// TODO check diff with updated data_io.v
-// TODO ram + display powerup initial values
+// TODO special expansion boards: TMS9918, SID, AY?
+// TODO check diff with updated data_io.v and other modules
+// TODO keyboard: isolate ps2 keyboard from apple1
+// TODO keyboard: check ps2 clock
+// TODO keyboard: reset and cls key
+// TODO keyboard: make a true ascii keyboard
+// TODO display: powerup values
+// TODO display: reduce to 512 bytes font
+// TODO display: use 7 MHz clock
+// TODO display: check parameters vs real apple1
+
 
 module apple1_mist(
    input         CLOCK_27,
