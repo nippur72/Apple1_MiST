@@ -188,7 +188,6 @@ ram ram(
 );
 
 // SDRAM control signals
-//assign SDRAM_CKE = 1'b1;
 
 wire [24:0] sdram_addr;
 wire  [7:0] sdram_din;
@@ -245,9 +244,9 @@ wire [7:0]  cpu_dout;
 wire        cpu_rd;
 wire        cpu_wr;
 
-wire ram_cs   = cpu_addr < 16'hc000;                          //  (cpu_addr[15:13] ==  3'b000);       // 0x0000 -> 0x1FFF
-wire basic_cs = cpu_addr >= 16'hE000 && cpu_addr <= 16'hEFFF; //  (cpu_addr[15:12] ==  4'b1110);      // 0xE000 -> 0xEFFF
-wire rom_cs   = cpu_addr >= 16'hFF00 && cpu_addr <= 16'hFFFF; //  (cpu_addr[15:8]  ==  8'b11111111);  // 0xFF00 -> 0xFFFF
+wire ram_cs   = cpu_addr < 16'hc000;                          // 0x0000 -> 0x1FFF
+wire basic_cs = cpu_addr >= 16'hE000 && cpu_addr <= 16'hEFFF; // 0xE000 -> 0xEFFF
+wire rom_cs   = cpu_addr >= 16'hFF00 && cpu_addr <= 16'hFFFF; // 0xFF00 -> 0xFFFF
 
 wire [7:0] bus_dout = basic_cs ? basic_dout :
                       rom_cs   ? rom_dout   :
