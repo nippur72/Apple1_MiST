@@ -175,7 +175,6 @@ set_global_assignment -name VERILOG_FILE rtl/arlet_6502/ALU.v
 set_global_assignment -name VERILOG_FILE rtl/arlet_6502/arlet_6502.v
 set_global_assignment -name VERILOG_FILE rtl/apple1.v
 set_global_assignment -name VERILOG_FILE rtl/clock.v
-set_global_assignment -name VERILOG_FILE rtl/pwr_reset.v
 set_global_assignment -name VERILOG_FILE rtl/ram.v
 set_global_assignment -name VERILOG_FILE rtl/rom_basic.v
 set_global_assignment -name VERILOG_FILE rtl/rom_wozmon.v

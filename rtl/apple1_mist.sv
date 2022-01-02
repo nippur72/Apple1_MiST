@@ -258,7 +258,7 @@ wire [7:0] bus_dout = basic_cs ? basic_dout :
 apple1 apple1 
 (
 	.clk7(clk7),
-	.rst_n(~reset_button),
+	.reset(reset_button),
 	
 	.cpu_clken(cpu_clken),     // apple1 outputs the CPU clock enable
 	
@@ -421,7 +421,7 @@ wire cpu_clken;  // provides the cpu clock enable signal derived from main clock
 //wire cpu_clken;
 clock clock(
   .clk7     ( clk7          ),   // input: main clock
-  .rst_n    ( ~reset_button ),   // input: reset signal
+  .reset    ( reset_button  ),   // input: reset signal
   .cpu_clken( cpu_clken     )    // output: cpu clock enable
 );
 

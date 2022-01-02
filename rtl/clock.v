@@ -26,7 +26,7 @@
 module clock
 (
     input clk7,             // 7MHz clock master clock
-    input rst_n,            // active low synchronous reset
+    input reset,            // reset
 
     // Clock enables
     output reg cpu_clken    // 1MHz clock enable for the CPU and devices
@@ -44,7 +44,7 @@ module clock
 	  reg [4:0] clk_div;
 	  always @(posedge clk7)
 	  begin
-			if ((clk_div == 7) || (rst_n == 1'b0))
+			if (clk_div == 7 || reset )
 				 clk_div <= 0;
 			else
 				 clk_div <= clk_div + 1'b1;

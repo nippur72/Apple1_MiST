@@ -24,7 +24,7 @@
 
 module apple1(
     input  clk7,                // 7 MHz master clock
-    input  rst_n,               // active low synchronous reset (needed for simulation)
+    input  reset,               // reset
 	 
 	 input  cpu_clken,           // cpu clock enable
 
@@ -62,27 +62,12 @@ assign ram_wr   = we & ram_cs;
     wire we;
 
     //////////////////////////////////////////////////////////////////////////
-    // Clocks
-
-
-    //////////////////////////////////////////////////////////////////////////
-    // Reset
-
-    wire rst;
-    pwr_reset pwr_reset(
-        .clk7(clk7),
-        .rst_n(rst_n),
-        .enable(cpu_clken),
-        .rst(rst)
-    );
-
-    //////////////////////////////////////////////////////////////////////////
     // 6502
 
     arlet_6502 arlet_6502(
         .clk    (clk7),
         .enable (cpu_clken),
-        .rst    (rst),
+        .rst    (reset),
         .ab     (addr),
         .dbi    (cpu_din),
         .dbo    (cpu_dout),
@@ -108,7 +93,7 @@ assign ram_wr   = we & ram_cs;
     wire [7:0] ps2_dout;
     ps2keyboard keyboard(
         .clk7(clk7),
-        .rst(rst),
+        .rst(reset),
         .key_clk(ps2_clk),
         .key_din(ps2_din),
         .cs(keyboard_cs),
@@ -119,7 +104,7 @@ assign ram_wr   = we & ram_cs;
     display display(
         .clk(clk7),
         .enable(display_cs & cpu_clken),
-        .rst(rst),
+        .rst(reset),
 
         .vga_h_sync(vga_h_sync),
         .vga_v_sync(vga_v_sync),
