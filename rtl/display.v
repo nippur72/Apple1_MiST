@@ -1,19 +1,22 @@
 module display (
     input clk,              // 14 MHz clock signal
+	 input rst,              // active high reset signal	 
     input enable,           // clock enable strobe,
-    input rst,              // active high reset signal
+
+	 input clr_screen,       // clear screen button
+	 
+	 // video output	
     output vga_h_sync,      // horizontal VGA sync pulse
     output vga_v_sync,      // vertical VGA sync pulse
     output vga_red,         // red VGA signal
     output vga_grn,         // green VGA signal
     output vga_blu,         // blue VGA signal
+
+	 // cpu interface
     input address,          // address bus
     input w_en,             // active high write enable strobe
     input [7:0] din,        // 8-bit data bus (input)
-    input [1:0] mode,       // 2-bit mode setting for pixel doubling
-    input [2:0] fg_colour,  // 3 bit background colour
-    input [2:0] bg_colour,  // 3 bit foreground colour
-    input clr_screen        // clear screen button
+    input [1:0] mode        // 2-bit mode setting for pixel doubling
 );
 
     //////////////////////////////////////////////////////////////////////////
@@ -183,9 +186,9 @@ module display (
     assign font_line = v_dot * 2 + 4;
 
     // vga signals out to monitor
-    assign vga_red = (h_active & v_active) ? (font_out ? fg_colour[2] : bg_colour[2]) : 1'b0;
-    assign vga_grn = (h_active & v_active) ? (font_out ? fg_colour[1] : bg_colour[1]) : 1'b0;    
-	 assign vga_blu = (h_active & v_active) ? (font_out ? fg_colour[0] : bg_colour[0]) : 1'b0;
+    assign vga_red = (h_active & v_active) ? font_out : 1'b0;
+    assign vga_grn = (h_active & v_active) ? font_out : 1'b0;    
+	 assign vga_blu = (h_active & v_active) ? font_out : 1'b0;
 
     assign vga_h_sync = (h_cnt < h_pulse) ? 0 : 1;
     assign vga_v_sync = (v_cnt < v_pulse) ? 0 : 1;

@@ -125,7 +125,7 @@ assign ram_wr   = we & ram_cs;
     );
 
     display display(
-        .clk14(clk14),
+        .clk(clk14),
         .enable(display_cs & cpu_clken),
         .rst(rst),
 
@@ -139,8 +139,6 @@ assign ram_wr   = we & ram_cs;
         .w_en(we & display_cs),
         .din(cpu_dout),
         .mode(2'b0),
-        .fg_colour(3'd7),
-        .bg_colour(3'd0),
         .clr_screen(vga_cls)
     );
 
