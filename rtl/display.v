@@ -15,8 +15,7 @@ module display (
 	 // cpu interface
     input address,          // address bus
     input w_en,             // active high write enable strobe
-    input [7:0] din,        // 8-bit data bus (input)
-    input [1:0] mode        // 2-bit mode setting for pixel doubling
+    input [7:0] din         // 8-bit data bus (input)    
 );
 
     //////////////////////////////////////////////////////////////////////////
@@ -111,7 +110,7 @@ module display (
 
     font_rom font_rom(
         .clk(clk),
-        .mode(mode),
+        .mode(2'b0),
         .character(font_char),
         .pixel(font_pixel),
         .line(font_line),

@@ -137,8 +137,7 @@ assign ram_wr   = we & ram_cs;
 
         .address(addr[0]),
         .w_en(we & display_cs),
-        .din(cpu_dout),
-        .mode(2'b0),
+        .din(cpu_dout),        
         .clr_screen(vga_cls)
     );
 
