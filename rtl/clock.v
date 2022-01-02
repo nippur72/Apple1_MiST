@@ -25,31 +25,27 @@
 
 module clock
 (
-    input clk7,             // 7MHz clock master clock
-    input reset,            // reset
+   input sys_clock,        // master clock
+   input reset,            // reset
 
-    // Clock enables
-    output reg cpu_clken    // 1MHz clock enable for the CPU and devices
+   // Clock enables
+   output reg cpu_clken    // 1MHz clock enable for the CPU and devices
 );
 
-    // generate clock enable once every
-    // 14 clocks. This will (hopefully) make
-    // the 6502 run at 1 MHz
-    //
-    // the clock division counter is synchronously
-    // reset using rst_n to avoid undefined signals
-    // in simulation
-    //
-
-	  reg [4:0] clk_div;
-	  always @(posedge clk7)
-	  begin
-			if (clk_div == 7 || reset )
-				 clk_div <= 0;
+	reg [7:0] clk_div;
+	always @(posedge sys_clock or posedge reset)
+	begin
+	   if(reset) begin
+			clk_div <= 0;
+		end
+		else begin			
+			if (clk_div == 6)
+				clk_div <= 0;
 			else
-				 clk_div <= clk_div + 1'b1;
+				clk_div <= clk_div + 1;
 
-			cpu_clken <= (clk_div[4:0] == 0);
-	  end
+			cpu_clken <= (clk_div[7:0] == 0);
+		end
+	end
 
 endmodule

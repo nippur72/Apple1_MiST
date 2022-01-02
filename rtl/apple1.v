@@ -23,11 +23,12 @@
 //
 
 module apple1(
-    input  clk7,                // 7 MHz master clock
     input  reset,               // reset
 	 
+    input  sys_clock,           // system clock
+	 input  pixel_clock,         // 7 MHz pixel clock 
 	 input  cpu_clken,           // cpu clock enable
-
+    
 	 // RAM interface
 	 output [15:0] ram_addr,
 	 output  [7:0] ram_din,
@@ -65,7 +66,7 @@ assign ram_wr   = we & ram_cs;
     // 6502
 
     arlet_6502 arlet_6502(
-        .clk    (clk7),
+        .clk    (sys_clock),
         .enable (cpu_clken),
         .rst    (reset),
         .ab     (addr),
@@ -92,7 +93,7 @@ assign ram_wr   = we & ram_cs;
     // PS/2 keyboard interface
     wire [7:0] ps2_dout;
     ps2keyboard keyboard(
-        .clk7(clk7),
+        .clk(sys_clock),
         .rst(reset),
         .key_clk(ps2_clk),
         .key_din(ps2_din),
@@ -102,7 +103,7 @@ assign ram_wr   = we & ram_cs;
     );
 
     display display(
-        .clk(clk7),
+        .clk(pixel_clock),
         .enable(display_cs & cpu_clken),
         .rst(reset),
 

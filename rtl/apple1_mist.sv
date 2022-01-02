@@ -90,8 +90,6 @@ localparam conf_str_len = $size(CONF_STR)>>3;
 wire st_reset_switch = buttons[1];
 wire st_menu_reset   = status[6];
 
-wire clk7;     // the 14.31818 MHz clock
-wire clk_osd;   // x2 clock for the OSD menu
 wire r, g, b;
 wire hs, vs;
 
@@ -116,6 +114,8 @@ wire reset_button = status[0] | st_menu_reset | st_reset_switch | !pll_locked;
 
 wire pll_locked;
 
+wire pixel_clock;        // the 14.31818 MHz clock
+wire clk_osd;            // x2 clock for the OSD menu
 wire sdram_clock;        // cpu x 7 x 8 for sdram.v interface
 wire sdram_clock_ph;     // cpu x 7 x 8 phase shifted -2.5 ns   	
 
@@ -123,8 +123,8 @@ pll pll
 (
 	.inclk0(CLOCK_27),
 	.locked(pll_locked),
-	.c0(clk_osd),           // x2 clock for OSD menu
-	.c1(clk7),	            // 7.15909 MHz (14.318180/2)		
+	.c0( clk_osd        ),  // x2 video clock for OSD menu
+	.c1( pixel_clock    ),	// 7.15909 MHz (14.318180/2)		
    .c2( sdram_clock    ),  // cpu x 7 x 8   
 	.c3( sdram_clock_ph )   // cpu x 7 x 8 phase shifted -2.5 ns   	
 );
@@ -164,7 +164,7 @@ downloader
    .ROM_done    ( ROM_loaded      ),	
 	         
    // external ram interface
-   .clk     ( clk7          ),
+   .clk     ( sdram_clock   ),
 	.clk_ena ( cpu_clken     ),
    .wr      ( download_wr   ),
    .addr    ( download_addr ),
@@ -179,7 +179,7 @@ downloader
 
 // RAM
 ram ram(
-  .clk    (clk7     ),
+  .clk    (sdram_clock),
   .ena    (cpu_clken ),
   .address(sdram_addr[15:0]),
   .w_en   (sdram_wr  ),
@@ -225,7 +225,7 @@ assign LED = ~dummy;
 // WozMon ROM
 wire [7:0] rom_dout;
 rom_wozmon rom_wozmon(
-  .clk(clk7),
+  .clk(sdram_clock),
   .address(cpu_addr[7:0]),
   .dout(rom_dout)
 );
@@ -233,7 +233,7 @@ rom_wozmon rom_wozmon(
 // Basic ROM
 wire [7:0] basic_dout;
 rom_basic rom_basic(
-  .clk(clk7),
+  .clk(sdram_clock),
   .address(cpu_addr[11:0]),
   .dout(basic_dout)
 );
@@ -254,11 +254,12 @@ wire [7:0] bus_dout = basic_cs ? basic_dout :
 					       8'b0;
 
 apple1 apple1 
-(
-	.clk7(clk7),
-	.reset(reset_button),
+(  
+	.reset(reset_button), 
 	
-	.cpu_clken(cpu_clken),     // apple1 outputs the CPU clock enable
+	.sys_clock(sdram_clock),   // system clock
+	.pixel_clock(pixel_clock), // pixel clock 7 Mhz
+	.cpu_clken(cpu_clken),     // CPU clock enable	
 	
 	// RAM interface
 	.ram_addr (cpu_addr),
@@ -326,7 +327,7 @@ user_io
 user_io (
    .conf_str       (CONF_STR       ),
 	
-	.clk_sys        (clk7          ),
+	.clk_sys        (sdram_clock    ),
 	
 	.SPI_CLK        (SPI_SCK        ),
 	.SPI_SS_IO      (CONF_DATA0     ),	
@@ -418,7 +419,7 @@ wire cpu_clken;  // provides the cpu clock enable signal derived from main clock
 
 //wire cpu_clken;
 clock clock(
-  .clk7     ( clk7          ),   // input: main clock
+  .sys_clock( sdram_clock   ),   // input: main clock
   .reset    ( reset_button  ),   // input: reset signal
   .cpu_clken( cpu_clken     )    // output: cpu clock enable
 );
