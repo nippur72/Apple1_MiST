@@ -1,5 +1,5 @@
 module display (
-    input clk,              // 14 MHz clock signal
+    input clk,              // 7 MHz clock signal
 	 input rst,              // active high reset signal	 
     input enable,           // clock enable strobe,
 
@@ -22,10 +22,10 @@ module display (
     // Registers and Parameters
 
     // video structure constants
-    parameter h_pixels = 910;    // horizontal pixels per line    
-    parameter h_pulse  = 65;     // hsync pulse length 
-    parameter hbp      = 208;    // end of horizontal back porch
-    parameter hfp      = 848;    // beginning of horizontal front porch	 
+    parameter h_pixels = 455; // 910;    // horizontal pixels per line    
+    parameter h_pulse  = 32;  // 65;     // hsync pulse length 
+    parameter hbp      = 104; // 208;    // end of horizontal back porch
+    parameter hfp      = 424; // 848;    // beginning of horizontal front porch	 
     parameter v_lines  = 262;    // vertical lines per frame
     parameter v_pulse  = 2;      // vsync pulse length    
 	 parameter vbp      = 42;     // end of vertical back porch
@@ -34,8 +34,8 @@ module display (
     // registers for storing the horizontal & vertical counters
     reg  [9:0] h_cnt;  // horizontal counter
     reg  [9:0] v_cnt;  // vertical counter
-	 reg  [4:0] v_dot;  // vertical counter within character matrix (0-7)
-    wire [3:0] h_dot;  // horizontal counter within character matrix (0-7)
+	 reg  [2:0] v_dot;  // vertical counter within character matrix (0-7) 
+    wire [2:0] h_dot;  // horizontal counter within character matrix (0-7)
     
     // hardware cursor registers
     wire [10:0] cursor;
@@ -58,7 +58,7 @@ module display (
 
     // font rom registers
     wire [5:0] font_char;
-    wire [3:0] font_pixel;
+    wire [2:0] font_pixel;
     wire [4:0] font_line;
     wire font_out;
 
@@ -101,9 +101,8 @@ module display (
             end
         end
     end
-
-    // count 16 pixels, so 640px / 16 = 40 characters
-    assign h_dot = h_active ? h_cnt[3:0] : 4'd0;
+    
+    assign h_dot = h_active ? h_cnt[2:0] : 0;
 
     //////////////////////////////////////////////////////////////////////////
     // Character ROM
@@ -134,21 +133,21 @@ module display (
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            vram_h_addr <= 'd0;
-            vram_v_addr <= 'd0;
+            vram_h_addr <= 0;
+            vram_v_addr <= 0;
         end 
 		  else begin
             // start the pipeline for reading vram and font details
             // 3 pixel clock cycles early
-            if (h_dot == 4'hC)
-                vram_h_addr <= vram_h_addr + 'd1;
+            if (h_dot == 6)
+                vram_h_addr <= vram_h_addr + 1;
 
             // advance to next row when last display line is reached for row
-            if (v_dot == 5'd7 && h_cnt == 10'd0)   
-                vram_v_addr <= vram_v_addr + 'd1;
+            if (v_dot == 7 && h_cnt == 0)   
+                vram_v_addr <= vram_v_addr + 1;
 
             // clear the address registers if we're not in visible area
-            if (~h_active) vram_h_addr <= 'd0;
+            if (~h_active) vram_h_addr <= 0;
             if (~v_active) vram_v_addr <= vram_start_addr;
         end
     end
@@ -179,7 +178,7 @@ module display (
     assign vram_r_addr = {vram_v_addr, vram_h_addr};
 
     assign font_char = (vram_r_addr != cursor) ? vram_dout : (blink) ? 6'd0 : 6'd32;
-    assign font_pixel = h_dot + 1; // offset by one to get pixel into right cycle,
+    assign font_pixel = h_dot;     // offset by one to get pixel into right cycle,
                                    // font output one pixel clk behind
     assign font_line = v_dot * 2 + 4;
 

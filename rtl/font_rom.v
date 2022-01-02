@@ -24,7 +24,7 @@
 module font_rom (
     input clk,              // clock signal    
     input [5:0] character,  // address bus
-    input [3:0] pixel,      // address of the pixel to output
+    input [2:0] pixel,      // address of the pixel to output
     input [4:0] line,       // address of the line to output
     output reg out          // single pixel from address and pixel pos
     );
@@ -54,7 +54,7 @@ module font_rom (
     begin
         romout = rom[(character * 10) + {2'd0, line_ptr}];
         
-        out <= romout[pixel[3:1]];
+        out <= romout[pixel];
     end
 
 endmodule

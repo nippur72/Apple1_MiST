@@ -20,6 +20,7 @@
 // TODO keyboard: reset and cls key
 // TODO keyboard: make a true ascii keyboard
 // TODO display: powerup values
+// TODO display: simplify rom font
 // TODO display: reduce to 512 bytes font
 // TODO display: use 7 MHz clock
 // TODO display: check parameters vs real apple1
@@ -86,7 +87,7 @@ localparam conf_str_len = $size(CONF_STR)>>3;
 wire st_reset_switch = buttons[1];
 wire st_menu_reset   = status[6];
 
-wire clk14;     // the 14.31818 MHz clock
+wire clk7;     // the 14.31818 MHz clock
 wire clk_osd;   // x2 clock for the OSD menu
 wire r, g, b;
 wire hs, vs;
@@ -117,7 +118,7 @@ pll pll
 	.inclk0(CLOCK_27),
 	.locked(pll_locked),
 	.c0(clk_osd),          // x2 clock for OSD menu
-	.c1(clk14)	           // 14.31818 MHz system clock
+	.c1(clk7)	           // 14.318180/2 = 7.15909 MHz system clock
 
 	/*
    .c2     ( sys_clock     ),     // cpu x 8   
@@ -160,8 +161,8 @@ downloader
    .ROM_done    ( ROM_loaded      ),	
 	         
    // external ram interface
-   .clk     ( clk14         ),
-	.clk_ena ( 1             ),
+   .clk     ( clk7         ),
+	.clk_ena ( cpu_clken     ),
    .wr      ( download_wr   ),
    .addr    ( download_addr ),
    .data    ( download_data )	
@@ -175,7 +176,8 @@ downloader
 
 // RAM
 ram ram(
-  .clk    (clk14     ),
+  .clk    (clk7     ),
+  .ena    (cpu_clken ),
   .address(sdram_addr[15:0]),
   .w_en   (sdram_wr  ),
   .din    (sdram_din ),
@@ -221,7 +223,7 @@ assign LED = ~dummy;
 // WozMon ROM
 wire [7:0] rom_dout;
 rom_wozmon rom_wozmon(
-  .clk(clk14),
+  .clk(clk7),
   .address(cpu_addr[7:0]),
   .dout(rom_dout)
 );
@@ -229,7 +231,7 @@ rom_wozmon rom_wozmon(
 // Basic ROM
 wire [7:0] basic_dout;
 rom_basic rom_basic(
-  .clk(clk14),
+  .clk(clk7),
   .address(cpu_addr[11:0]),
   .dout(basic_dout)
 );
@@ -249,11 +251,14 @@ wire [7:0] bus_dout = basic_cs ? basic_dout :
 					       ram_cs   ? sdram_dout :
 					       8'b0;
 
+wire cpu_clken;
 
 apple1 apple1 
 (
-	.clk14(clk14),
+	.clk7(clk7),
 	.rst_n(~reset_button),
+	
+	.cpu_clken(cpu_clken),     // apple1 outputs the CPU clock enable
 	
 	// RAM interface
 	.ram_addr (cpu_addr),
@@ -321,7 +326,7 @@ user_io
 user_io (
    .conf_str       (CONF_STR       ),
 	
-	.clk_sys        (clk14          ),
+	.clk_sys        (clk7          ),
 	
 	.SPI_CLK        (SPI_SCK        ),
 	.SPI_SS_IO      (CONF_DATA0     ),	

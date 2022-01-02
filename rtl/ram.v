@@ -24,6 +24,7 @@
 
 module ram (
     input clk,              // clock signal
+	 input ena,
     input [15:0] address,   // address bus
     input w_en,             // active high write enable strobe
     input [7:0] din,        // 8-bit data bus (input)
@@ -36,9 +37,9 @@ module ram (
     //    $readmemh("roms/ram.hex", ram_data, 0, 8191);
 
     always @(posedge clk)
-    begin
-        dout <= ram_data[address];
-        if (w_en) ram_data[address] <= din;
+    begin		  
+		 dout <= ram_data[address];
+       if (w_en) ram_data[address] <= din;		  
     end
 
 endmodule

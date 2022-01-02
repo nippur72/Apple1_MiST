@@ -107,11 +107,11 @@ module pll (
 				.vcounderrange ());
 	defparam
 		altpll_component.bandwidth_type = "AUTO",
-		altpll_component.clk0_divide_by = 675000,
+		altpll_component.clk0_divide_by = 1350000,
 		altpll_component.clk0_duty_cycle = 50,
 		altpll_component.clk0_multiply_by = 715909,
 		altpll_component.clk0_phase_shift = "0",
-		altpll_component.clk1_divide_by = 1350000,
+		altpll_component.clk1_divide_by = 2700000,
 		altpll_component.clk1_duty_cycle = 50,
 		altpll_component.clk1_multiply_by = 715909,
 		altpll_component.clk1_phase_shift = "0",
@@ -192,8 +192,8 @@ endmodule
 // Retrieval info: PRIVATE: DIV_FACTOR1 NUMERIC "27"
 // Retrieval info: PRIVATE: DUTY_CYCLE0 STRING "50.00000000"
 // Retrieval info: PRIVATE: DUTY_CYCLE1 STRING "50.00000000"
-// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE0 STRING "28.636360"
-// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE1 STRING "14.318180"
+// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE0 STRING "14.318180"
+// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE1 STRING "7.159090"
 // Retrieval info: PRIVATE: EXPLICIT_SWITCHOVER_COUNTER STRING "0"
 // Retrieval info: PRIVATE: EXT_FEEDBACK_RADIO STRING "0"
 // Retrieval info: PRIVATE: GLOCKED_COUNTER_EDIT_CHANGED STRING "1"
@@ -221,8 +221,8 @@ endmodule
 // Retrieval info: PRIVATE: MULT_FACTOR0 NUMERIC "25"
 // Retrieval info: PRIVATE: MULT_FACTOR1 NUMERIC "25"
 // Retrieval info: PRIVATE: NORMAL_MODE_RADIO STRING "1"
-// Retrieval info: PRIVATE: OUTPUT_FREQ0 STRING "28.63636000"
-// Retrieval info: PRIVATE: OUTPUT_FREQ1 STRING "14.31818000"
+// Retrieval info: PRIVATE: OUTPUT_FREQ0 STRING "14.31818000"
+// Retrieval info: PRIVATE: OUTPUT_FREQ1 STRING "7.15909000"
 // Retrieval info: PRIVATE: OUTPUT_FREQ_MODE0 STRING "1"
 // Retrieval info: PRIVATE: OUTPUT_FREQ_MODE1 STRING "1"
 // Retrieval info: PRIVATE: OUTPUT_FREQ_UNIT0 STRING "MHz"
@@ -268,11 +268,11 @@ endmodule
 // Retrieval info: PRIVATE: ZERO_DELAY_RADIO STRING "0"
 // Retrieval info: LIBRARY: altera_mf altera_mf.altera_mf_components.all
 // Retrieval info: CONSTANT: BANDWIDTH_TYPE STRING "AUTO"
-// Retrieval info: CONSTANT: CLK0_DIVIDE_BY NUMERIC "675000"
+// Retrieval info: CONSTANT: CLK0_DIVIDE_BY NUMERIC "1350000"
 // Retrieval info: CONSTANT: CLK0_DUTY_CYCLE NUMERIC "50"
 // Retrieval info: CONSTANT: CLK0_MULTIPLY_BY NUMERIC "715909"
 // Retrieval info: CONSTANT: CLK0_PHASE_SHIFT STRING "0"
-// Retrieval info: CONSTANT: CLK1_DIVIDE_BY NUMERIC "1350000"
+// Retrieval info: CONSTANT: CLK1_DIVIDE_BY NUMERIC "2700000"
 // Retrieval info: CONSTANT: CLK1_DUTY_CYCLE NUMERIC "50"
 // Retrieval info: CONSTANT: CLK1_MULTIPLY_BY NUMERIC "715909"
 // Retrieval info: CONSTANT: CLK1_PHASE_SHIFT STRING "0"

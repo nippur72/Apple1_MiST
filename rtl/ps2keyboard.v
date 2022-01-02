@@ -22,7 +22,7 @@
 //
 
 module ps2keyboard (
-    input       clk14,      // 25MHz clock
+    input       clk7,       // 25MHz clock
     input       rst,        // active high reset
 
     // I/O interface to keyboard
@@ -43,7 +43,7 @@ module ps2keyboard (
     reg [7:0]  rx;          // scancode receive buffer
 
  //   wire ps2_clkdb;         // debounced PS/2 clock signal
-    reg  prev_ps2_clkdb;    // previous clock state (in clk14 domain)
+    reg  prev_ps2_clkdb;    // previous clock state (in clk7 domain)
     
     // keyboard translation signals
     reg [7:0]  ascii;       // ASCII code of received character
@@ -54,13 +54,13 @@ module ps2keyboard (
 
  //   debounce ps2clk_debounce
  //   (
- //       .clk14(clk14),
+ //       .clk7(clk7),
  //       .rst(rst),
  //       .sig_in(key_clk),
  //       .sig_out(ps2_clkdb)
  //   );
 
-    always @(posedge clk14 or posedge rst)
+    always @(posedge clk7 or posedge rst)
     begin
         if (rst)
         begin
@@ -112,7 +112,7 @@ module ps2keyboard (
     localparam S_KEYE0      = 3'b010;   // extended key state
     localparam S_KEYE0F0    = 3'b011;   // extended release state
 
-    always @(posedge clk14 or posedge rst)
+    always @(posedge clk7 or posedge rst)
     begin
         if (rst)
         begin

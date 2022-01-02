@@ -24,7 +24,7 @@
 //
 
 module pwr_reset(
-    input clk14,        // 14Mhz master clock
+    input clk7,         // 7Mhz master clock
     input rst_n,        // active low synchronous reset
     input enable,       // clock enable
     output rst          // active high synchronous system reset
@@ -34,7 +34,7 @@ module pwr_reset(
     reg [5:0] reset_cnt;
     wire pwr_up_flag = &reset_cnt;
 
-    always @(posedge clk14)
+    always @(posedge clk7)
     begin
         if (rst_n == 1'b0)
         begin
