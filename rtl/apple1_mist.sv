@@ -4,6 +4,9 @@
 //
 //
 
+// TODO clean reset, reset_n
+// TODO take power reset
+// TODO take out cpu clock enable 
 // TODO make ram work with clock enable
 // TODO load binary files into memory
 // TODO make it work with SDRAM
@@ -113,17 +116,18 @@ wire reset_button = status[0] | st_menu_reset | st_reset_switch | !pll_locked;
 
 wire pll_locked;
 
+wire sdram_clock;        // cpu x 8 for sdram.v interface
+wire sdram_clock_ph;     // cpu x 8 phase shifted -2.5 ns   	
+
 pll pll 
 (
 	.inclk0(CLOCK_27),
 	.locked(pll_locked),
-	.c0(clk_osd),          // x2 clock for OSD menu
-	.c1(clk7)	           // 14.318180/2 = 7.15909 MHz system clock
+	.c0(clk_osd),           // x2 clock for OSD menu
+	.c1(clk7),	            // 7.15909 MHz (14.318180/2)		
+   .c2( sdram_clock    ),  // cpu x 8   
+	.c3( sdram_clock_ph )   // cpu x 8 phase shifted -2.5 ns   	
 
-	/*
-   .c2     ( sys_clock     ),     // cpu x 8   
-	.c3     ( SDRAM_CLK     )      // cpu x 8 phase shifted -2.5 ns   	
-	*/
 );
 
 /******************************************************************************************/
@@ -251,8 +255,6 @@ wire [7:0] bus_dout = basic_cs ? basic_dout :
 					       ram_cs   ? sdram_dout :
 					       8'b0;
 
-wire cpu_clken;
-
 apple1 apple1 
 (
 	.clk7(clk7),
@@ -350,10 +352,12 @@ user_io (
 /***************************************** @sdram *****************************************/
 /******************************************************************************************/
 /******************************************************************************************/
-/*			
+			
 // SDRAM control signals
 assign SDRAM_CKE = 1'b1;
+assign SDRAM_CLK = sdram_clock_ph;
 
+/*
 wire [24:0] sdram_addr;
 wire  [7:0] sdram_din;
 wire        sdram_wr;
@@ -405,5 +409,20 @@ sdram sdram (
    .dout           ( sdram_dout                )
 );
 */
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @clock_ena *************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+wire cpu_clken;  // provides the cpu clock enable signal derived from main clock
+
+//wire cpu_clken;
+clock clock(
+  .clk7     ( clk7          ),   // input: main clock
+  .rst_n    ( ~reset_button ),   // input: reset signal
+  .cpu_clken( cpu_clken     )    // output: cpu clock enable
+);
 
 endmodule 

@@ -26,7 +26,7 @@ module apple1(
     input  clk7,                // 7 MHz master clock
     input  rst_n,               // active low synchronous reset (needed for simulation)
 	 
-	 output cpu_clken,           // cpu clock enable
+	 input  cpu_clken,           // cpu clock enable
 
 	 // RAM interface
 	 output [15:0] ram_addr,
@@ -64,12 +64,6 @@ assign ram_wr   = we & ram_cs;
     //////////////////////////////////////////////////////////////////////////
     // Clocks
 
-    //wire cpu_clken;
-    clock clock(
-        .clk7(clk7),
-        .rst_n(rst_n),
-        .cpu_clken(cpu_clken)
-    );
 
     //////////////////////////////////////////////////////////////////////////
     // Reset
