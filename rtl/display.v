@@ -1,5 +1,5 @@
 module display (
-    input clk14,            // clock signal
+    input clk,              // 14 MHz clock signal
     input enable,           // clock enable strobe,
     input rst,              // active high reset signal
     output vga_h_sync,      // horizontal VGA sync pulse
@@ -20,39 +20,39 @@ module display (
     // Registers and Parameters
 
     // video structure constants
-    parameter h_pixels = 910;   // horizontal pixels per line
-    parameter v_lines = 262;    // vertical lines per frame
-    parameter h_pulse = 65;     // hsync pulse length (was: 96)
-    parameter v_pulse = 2;      // vsync pulse length
-    parameter hbp = 144+64;     // end of horizontal back porch
-    parameter hfp = 784+64;     // beginning of horizontal front porch
-    parameter vbp = 10+32;      // end of vertical back porch
-    parameter vfp = 202+32;     // beginning of vertical front porch
+    parameter h_pixels = 910;    // horizontal pixels per line
+    parameter v_lines  = 262;    // vertical lines per frame
+    parameter h_pulse  = 65;     // hsync pulse length (was: 96)
+    parameter v_pulse  = 2;      // vsync pulse length
+    parameter hbp      = 208;    // end of horizontal back porch
+    parameter hfp      = 848;    // beginning of horizontal front porch
+    parameter vbp      = 42;     // end of vertical back porch
+    parameter vfp      = 234;    // beginning of vertical front porch
 
     // registers for storing the horizontal & vertical counters
-    reg [9:0] h_cnt;
-    reg [9:0] v_cnt;
-    wire [3:0] h_dot;
-    reg [4:0] v_dot;
-
+    reg  [9:0] h_cnt;  // horizontal counter
+    reg  [9:0] v_cnt;  // vertical counter
+	 reg  [4:0] v_dot;  // vertical counter within character matrix (0-7)
+    wire [3:0] h_dot;  // horizontal counter within character matrix (0-7)
+    
     // hardware cursor registers
     wire [10:0] cursor;
-    reg [5:0] h_cursor;
-    reg [4:0] v_cursor;
+    reg  [5:0]  h_cursor;
+    reg  [4:0]  v_cursor;
 
     // vram indexing registers
-    reg [5:0] vram_h_addr;
-    reg [4:0] vram_v_addr;
-    reg [4:0] vram_start_addr;
-    reg [4:0] vram_end_addr;
+    reg  [5:0] vram_h_addr;
+    reg  [4:0] vram_v_addr;
+    reg  [4:0] vram_start_addr;
+    reg  [4:0] vram_end_addr;
     wire [4:0] vram_clr_addr;
 
     // vram registers
     wire [10:0] vram_r_addr;
-    reg [10:0] vram_w_addr;
-    reg vram_w_en;
-    reg [5:0] vram_din;
-    wire [5:0] vram_dout;
+    reg  [10:0] vram_w_addr;
+    reg         vram_w_en;
+    reg  [5:0]  vram_din;
+    wire [5:0]  vram_dout;
 
     // font rom registers
     wire [5:0] font_char;
@@ -64,47 +64,34 @@ module display (
     reg char_seen;
 
     // active region strobes
-    wire h_active;
-    wire v_active;
-    assign h_active = (h_cnt >= hbp && h_cnt < hfp);
-    assign v_active = (v_cnt >= vbp && v_cnt < vfp);
+    wire h_active = (h_cnt >= hbp && h_cnt < hfp);
+    wire v_active = (v_cnt >= vbp && v_cnt < vfp);
 
-    //////////////////////////////////////////////////////////////////////////
-    // VGA Sync Generation
-    //
-    always @(posedge clk14 or posedge rst)
-    begin
-        if (rst)
-        begin
+    // horizontal and vertical counters
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
             h_cnt <= 10'd0;
             v_cnt <= 10'd0;
             v_dot <= 5'd0;
         end
-        else
-        begin
+        else begin
             if (h_cnt < h_pixels)
                 h_cnt <= h_cnt + 1;
-
-            else
-            begin
+            else begin
                 // reset horizontal counters
                 h_cnt <= 0;
 
-                if (v_cnt < v_lines)
-                begin
+                if (v_cnt < v_lines) begin
                     v_cnt <= v_cnt + 1;
+                    
+                    if (v_active) begin
+                        v_dot <= v_dot + 1;  
 
-                    // count 20 rows, so 480px / 20 = 24 rows
-                    if (v_active)
-                    begin
-                        v_dot <= v_dot + 1;  // +1
-
-                        if (v_dot == 5'd7)  // == d19
+                        if (v_dot == 5'd7)  
                             v_dot <= 0;
                     end
                 end
-                else
-                begin
+                else begin
                     // reset vertical counters
                     v_cnt <= 0;
                     v_dot <= 0;
@@ -120,7 +107,7 @@ module display (
     // Character ROM
 
     font_rom font_rom(
-        .clk(clk14),
+        .clk(clk),
         .mode(mode),
         .character(font_char),
         .pixel(font_pixel),
@@ -132,7 +119,7 @@ module display (
     // Video RAM
 
     vram vram(
-        .clk(clk14),
+        .clk(clk),
         .read_addr(vram_r_addr),
         .write_addr(vram_w_addr),
         .r_en(h_active),
@@ -144,25 +131,24 @@ module display (
     //////////////////////////////////////////////////////////////////////////
     // Video Signal Generation
 
-    always @(posedge clk14 or posedge rst) begin
+    always @(posedge clk or posedge rst) begin
         if (rst) begin
             vram_h_addr <= 'd0;
             vram_v_addr <= 'd0;
-        end else begin
+        end 
+		  else begin
             // start the pipeline for reading vram and font details
             // 3 pixel clock cycles early
             if (h_dot == 4'hC)
                 vram_h_addr <= vram_h_addr + 'd1;
 
             // advance to next row when last display line is reached for row
-            if (v_dot == 5'd7 && h_cnt == 10'd0)   // == d19
+            if (v_dot == 5'd7 && h_cnt == 10'd0)   
                 vram_v_addr <= vram_v_addr + 'd1;
 
             // clear the address registers if we're not in visible area
-            if (~h_active)
-                vram_h_addr <= 'd0;
-            if (~v_active)
-                vram_v_addr <= vram_start_addr;
+            if (~h_active) vram_h_addr <= 'd0;
+            if (~v_active) vram_v_addr <= vram_start_addr;
         end
     end
 
@@ -171,7 +157,7 @@ module display (
 
     reg blink;
     reg [22:0] blink_div;
-    always @(posedge clk14 or posedge rst)
+    always @(posedge clk or posedge rst)
     begin
         if (rst)
             blink_div <= 0;
@@ -209,7 +195,7 @@ module display (
 
     assign vram_clr_addr = vram_end_addr + {3'd0, vram_v_addr[1:0]};
 
-    always @(posedge clk14 or posedge rst)
+    always @(posedge clk or posedge rst)
     begin
         if (rst)
         begin
