@@ -22,24 +22,26 @@
 // Date.......: 26-1-2018
 //
 
+
 module ram (
-    input clk,              // clock signal
-	 input ena,
+    input clk,              // clock signal	 	
     input [15:0] address,   // address bus
     input w_en,             // active high write enable strobe
     input [7:0] din,        // 8-bit data bus (input)
     output reg [7:0] dout   // 8-bit data bus (output)
 );
 
-    reg [7:0] ram_data[0:49151];
+    parameter SIZE = 49152;
+
+    reg [7:0] ram_data[0:SIZE-1];
 
     //initial
     //    $readmemh("roms/ram.hex", ram_data, 0, 8191);
-
+	 	 
     always @(posedge clk)
-    begin		  
-		 dout <= ram_data[address];
-       if (w_en) ram_data[address] <= din;		  
+    begin		       
+		dout <= ram_data[address];
+		if (w_en) ram_data[address] <= din;		  		 
     end
 
 endmodule
