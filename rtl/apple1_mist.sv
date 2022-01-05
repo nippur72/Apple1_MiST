@@ -117,7 +117,6 @@ wire pll_locked;
 
 wire sys_clock;          // cpu x 7 x 8 system clock (sdram.v)
 wire osd_clock;          // cpu x 7 x 2 for the OSD menu
-wire sdram_clock_ph;     // cpu x 7 x 8 phase shifted -2.5 ns   	
 
 pll pll 
 (
@@ -126,7 +125,7 @@ pll pll
 	
 	.c0( osd_clock      ),  // cpu x 7 x 2 video clock for OSD menu
    .c2( sys_clock      ),  // cpu x 7 x 8 system clock (sdram.v)
-	.c3( sdram_clock_ph )   // cpu x 7 x 8 phase shifted -2.5 ns   	
+	.c3( SDRAM_CLK      )   // cpu x 7 x 8 phase shifted -2.5 ns   	
 );
 
 /******************************************************************************************/
@@ -173,54 +172,20 @@ downloader
 
 /******************************************************************************************/
 /******************************************************************************************/
-/***************************************** @apple1 ****************************************/
+/***************************************** @ram *******************************************/
 /******************************************************************************************/
 /******************************************************************************************/
 
-// RAM
-ram ram(
+wire [7:0] ram_dout;
+
+// low system RAM
+ram #(.SIZE(16384)) ram(
   .clk    (sys_clock ),
-  .ena    (cpu_clken ),       // fake does not work
   .address(sdram_addr[15:0]),
-  .w_en   (sdram_wr  ),
+  .w_en   (sdram_wr & ram_cs),
   .din    (sdram_din ),
-  .dout   (sdram_dout)
+  .dout   (ram_dout  )  
 );
-
-// SDRAM control signals
-
-wire [24:0] sdram_addr;
-wire  [7:0] sdram_din;
-wire        sdram_wr;
-wire        sdram_rd;
-wire [7:0]  sdram_dout;
-
-assign dummy = is_downloading && download_wr;
-
-always @(*) begin
-	if(is_downloading && download_wr) begin
-		sdram_addr   <= download_addr;
-		sdram_din    <= download_data;
-		sdram_wr     <= download_wr;
-		sdram_rd     <= 1'b1;	      
-	end
-   /*	
-	else if(eraser_busy) begin		
-		sdram_addr   <= eraser_addr;
-		sdram_din    <= eraser_data;
-		sdram_wr     <= eraser_wr;
-		sdram_rd     <= 1'b1;		
-	end	
-	*/
-	else begin
-		sdram_addr   <= { 9'b0, cpu_addr[15:0] };
-		sdram_din    <= cpu_dout;		
-		sdram_wr     <= cpu_wr;
-		sdram_rd     <= cpu_rd;		
-	end	
-end
-
-assign LED = ~dummy;
 
 // WozMon ROM
 wire [7:0] rom_dout;
@@ -230,6 +195,7 @@ rom_wozmon rom_wozmon(
   .dout(rom_dout)
 );
 
+/*
 // Basic ROM
 wire [7:0] basic_dout;
 rom_basic rom_basic(
@@ -237,6 +203,51 @@ rom_basic rom_basic(
   .address(cpu_addr[11:0]),
   .dout(basic_dout)
 );
+*/
+
+// Basic RAM
+wire [7:0] basic_dout;
+ram #(.SIZE(4096)) rom_basic(
+  .clk(sys_clock),
+  .address({4'b000, sdram_addr[11:0]}),
+  .w_en   (sdram_wr & basic_cs),
+  .din    (sdram_din ),
+  .dout   (basic_dout)
+);
+
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @apple1 ****************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+// SDRAM control signals
+
+wire [24:0] sdram_addr;
+wire  [7:0] sdram_din;
+wire        sdram_wr;
+wire        sdram_rd;
+wire [7:0]  sdram_dout;
+
+always @(*) begin
+	if(is_downloading && download_wr) begin
+		sdram_addr   <= download_addr;
+		sdram_din    <= download_data;
+		sdram_wr     <= download_wr;
+		sdram_rd     <= 1'b1;	      
+	end
+	else begin
+		sdram_addr   <= { 9'b0, cpu_addr[15:0] };
+		sdram_din    <= cpu_dout;		
+		sdram_wr     <= cpu_wr;
+		sdram_rd     <= 1'b1;		
+	end	
+end
+
+wire dummy = is_downloading && download_wr;
+assign LED = ~dummy;
+
 
 // ram interface
 wire [15:0] cpu_addr;
@@ -244,13 +255,15 @@ wire [7:0]  cpu_dout;
 wire        cpu_rd;
 wire        cpu_wr;
 
-wire ram_cs   = cpu_addr < 16'hc000;                          // 0x0000 -> 0x1FFF
-wire basic_cs = cpu_addr >= 16'hE000 && cpu_addr <= 16'hEFFF; // 0xE000 -> 0xEFFF
-wire rom_cs   = cpu_addr >= 16'hFF00 && cpu_addr <= 16'hFFFF; // 0xFF00 -> 0xFFFF
+wire ram_cs   = sdram_addr <  'h4000;                         // 0x0000 -> 0x3FFF
+wire sdram_cs = sdram_addr >= 'h4000 && sdram_addr <= 'hBFFF; // 0x4000 -> 0xBFFF
+wire basic_cs = sdram_addr >= 'hE000 && sdram_addr <= 'hEFFF; // 0xE000 -> 0xEFFF
+wire rom_cs   = sdram_addr >= 'hFF00;                         // 0xFF00 -> 0xFFFF
 
-wire [7:0] bus_dout = basic_cs ? basic_dout :
-                      rom_cs   ? rom_dout   :
-					       ram_cs   ? sdram_dout :
+wire [7:0] bus_dout = rom_cs   ? rom_dout   :
+                      basic_cs ? basic_dout :
+                      sdram_cs ? sdram_dout :
+					       ram_cs   ? ram_dout   :
 					       8'b0;
 
 apple1 apple1 
@@ -324,7 +337,7 @@ mist_video
 	.VGA_G(VGA_G),
 	.VGA_B(VGA_B),
 	.VGA_VS(VGA_VS),
-	.VGA_HS(VGA_HS),	
+	.VGA_HS(VGA_HS)	
 );
 
 /******************************************************************************************/
@@ -368,7 +381,6 @@ user_io (
 			
 // SDRAM control signals
 assign SDRAM_CKE = 1'b1;
-assign SDRAM_CLK = sdram_clock_ph;  // same as sys_clock but with -2.5 ns phase
 
 /*
 wire [24:0] sdram_addr;
@@ -397,6 +409,7 @@ always @(*) begin
 		sdram_rd     <= cpu_rd;
 	end	
 end
+*/
 
 sdram sdram (
 	// interface to the MT48LC16M16 chip
@@ -412,8 +425,8 @@ sdram sdram (
    // system interface
    .clk            ( sys_clock                 ),
    .clkref         ( cpu_clock                 ),
-   .init           ( !pll_locked               ),
-
+   .init           ( !pll_locked               ),	
+	
    // cpu interface
    .din            ( sdram_din                 ),
    .addr           ( sdram_addr                ),
@@ -421,21 +434,22 @@ sdram sdram (
    .oe         	 ( sdram_rd                  ),
    .dout           ( sdram_dout                )
 );
-*/
 
 /******************************************************************************************/
 /******************************************************************************************/
-/***************************************** @clock_ena *************************************/
+/***************************************** @clock *****************************************/
 /******************************************************************************************/
 /******************************************************************************************/
 
 wire cpu_clken;    // provides the cpu clock enable signal derived from main clock
 wire pixel_clken;  // provides the cpu clock enable signal derived from main clock
+wire cpu_clock;
 
 clock clock(
-  .sys_clock  ( sys_clock   ),     // input: main clock
+  .sys_clock  ( sys_clock     ),   // input: main clock
   .reset      ( reset_button  ),   // input: reset signal
-  
+
+  .cpu_clock  ( cpu_clock     ),  
   .cpu_clken  ( cpu_clken     ),   // output: cpu clock enable
   .pixel_clken( pixel_clken   )    // output: pixel clock enable
 );
