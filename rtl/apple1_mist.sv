@@ -13,16 +13,21 @@
 // TODO support ACI interface for load and save
 // TODO special expansion boards: TMS9918, SID, AY?
 // TODO check diff with updated data_io.v and other modules
-// TODO osd menu yellow, why it doesn't work?
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
 // TODO keyboard: reset and cls key
 // TODO keyboard: make a true ascii keyboard
+// TODO osd menu yellow, why it doesn't work?
+// TODO display: check NTSC AD724 hsync problem
 // TODO display: powerup values
 // TODO display: simplify rom font
 // TODO display: reduce to 512 bytes font
 // TODO display: check parameters vs real apple1
-// TODO display: check cursor blinking
+// TODO display: check cursor blinking vs 555 timings
+// TODO display: slow it down
+// TODO display: emulate PIA registers
+
+
 
 
 module apple1_mist(
