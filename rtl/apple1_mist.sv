@@ -5,7 +5,6 @@
 //
 
 // TODO make it work with SDRAM
-// TODO make ram work with clock enable
 // TODO ram refresh lost cycles
 // TODO power on-off key ? (init ram)
 // TODO ram powerup initial values
