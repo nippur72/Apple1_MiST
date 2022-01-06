@@ -13,6 +13,8 @@ module display (
     output vga_red,         // red VGA signal
     output vga_grn,         // green VGA signal
     output vga_blu,         // blue VGA signal
+	 
+	 output reg ready,       // display ready (PB7 of CIA)
 
 	 // cpu interface
     input address,          // address bus
@@ -70,6 +72,8 @@ module display (
     // active region strobes
     wire h_active = (h_cnt >= hbp && h_cnt < hfp);
     wire v_active = (v_cnt >= vbp && v_cnt < vfp);
+	 
+	 
 
     // horizontal and vertical counters
     always @(posedge sys_clock or posedge reset) begin
@@ -100,7 +104,7 @@ module display (
                     // reset vertical counters
                     v_cnt <= 0;
                     v_dot <= 0;
-                end
+                end					 
             end
         end
     end
@@ -201,17 +205,19 @@ module display (
 
     always @(posedge sys_clock or posedge reset)
     begin
-        if (reset)
-        begin
+        if (reset) begin
             h_cursor <= 6'd0;
             v_cursor <= 5'd0;
             char_seen <= 'b0;
             vram_start_addr <= 5'd0;
             vram_end_addr <= 5'd24;
+				ready <= 0;
         end
         else
         if(pixel_clken) begin
             vram_w_en <= 0;
+				if(v_cnt == 0 && h_cnt == 0) 
+				   ready <= 1;
 
             if (clr_screen)
             begin
@@ -244,10 +250,11 @@ module display (
 
                 if (address == 1'b0) // address low == TX register
                 begin
-                    if (cpu_clken & w_en & ~char_seen)
+                    if (cpu_clken & w_en & ~char_seen & ready)
                     begin
                         // incoming character
                         char_seen <= 1;
+					         ready <= 0;			
 
                         case(din)
                         8'h0D,
@@ -274,7 +281,7 @@ module display (
                         endcase
                     end
                     else if(~cpu_clken & ~w_en)
-                        char_seen <= 0;
+                        char_seen <= 0;								
                 end
                 else
                 begin

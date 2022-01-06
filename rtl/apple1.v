@@ -85,13 +85,15 @@ assign ram_wr   = we & ram_cs;
     wire display_cs  = (addr[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
 	 wire ram_cs = !keyboard_cs & !display_cs;
 
-	 wire [7:0] display_dout = 8'b0;   // display always returns ready on the control port	   
+	 // byte returned from display out
+	 wire [7:0] display_dout = { ~PB7, 7'b0 };  
 
     //////////////////////////////////////////////////////////////////////////
     // Peripherals
 
     // PS/2 keyboard interface
     wire [7:0] ps2_dout;
+	 wire cls_key;
     ps2keyboard keyboard(
         .clk(sys_clock),
         .rst(reset),
@@ -99,9 +101,11 @@ assign ram_wr   = we & ram_cs;
         .key_din(ps2_din),
         .cs(keyboard_cs),
         .address(addr[0]),
-        .dout(ps2_dout)
+        .dout(ps2_dout),
+		  .cls_key(cls_key)
     );
 
+	 wire PB7; // (negated) display ready (PB7 of CIA)
     display display(
 	     .reset(reset),
 		  
@@ -118,7 +122,8 @@ assign ram_wr   = we & ram_cs;
         .address(addr[0]),
         .w_en(we & display_cs),
         .din(cpu_dout),        
-        .clr_screen(vga_cls)
+        .clr_screen(cls_key),
+		  .ready(PB7)
     );
 
     //////////////////////////////////////////////////////////////////////////

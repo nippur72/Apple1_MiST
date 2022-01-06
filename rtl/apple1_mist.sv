@@ -14,7 +14,7 @@
 // TODO check diff with updated data_io.v and other modules
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
-// TODO keyboard: reset and cls key
+// TODO keyboard: reset key
 // TODO keyboard: make a true ascii keyboard
 // TODO osd menu yellow, why it doesn't work?
 // TODO display: check NTSC AD724 hsync problem
@@ -23,10 +23,7 @@
 // TODO display: reduce to 512 bytes font
 // TODO display: check parameters vs real apple1
 // TODO display: check cursor blinking vs 555 timings
-// TODO display: slow it down
 // TODO display: emulate PIA registers
-
-
 
 
 module apple1_mist(
@@ -289,7 +286,7 @@ apple1 apple1
 	.vga_grn(g),
 	.vga_blu(b),
 
-	.vga_cls()             // clear screen button (not connected yet) 
+	.vga_cls()               // clear screen button (not connected yet) 
 );
 
 

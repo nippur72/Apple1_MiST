@@ -32,7 +32,9 @@ module ps2keyboard (
     // I/O interface to computer
     input       cs,         // chip select, active high
     input       address,    // =0 RX buffer, =1 RX status
-    output reg [7:0] dout   // 8-bit output bus.
+    output reg [7:0] dout,  // 8-bit output bus.
+	 
+	 output reg  cls_key     // F1 acts as clear screeen hardware button
 );
 
     reg [3:0]  rxcnt;       // count how many bits have been shift into rxshiftbuf
@@ -177,6 +179,7 @@ module ps2keyboard (
                                 else begin
                                     if (!shift)
                                         case(rx)
+													     8'h05:  cls_key <= 1;
                                             8'h1C:  ascii <= "A";
                                             8'h32:  ascii <= "B";
                                             8'h21:  ascii <= "C";
@@ -308,6 +311,7 @@ module ps2keyboard (
                             if ((rx == 8'h59) || (rx == 8'h12))
                                 shift <= 1'b0;
                             next_state = S_KEYNORMAL;
+									 cls_key <= 0;
                         end
                     S_KEYE0:
                         begin
