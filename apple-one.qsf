@@ -154,7 +154,11 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:rtl/build_id.tcl"
 
 # end ENTITY(apple1_mist)
 # -----------------------
+set_global_assignment -name VERILOG_FILE rtl/aci.v
 set_global_assignment -name VERILOG_FILE rtl/display_ram.v
+set_global_assignment -name VERILOG_FILE rtl/tms9918/vram.v
+set_global_assignment -name VERILOG_FILE rtl/tms9918/tms9918_async.v
+set_global_assignment -name VERILOG_FILE rtl/tms9918/tms9918.v
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/downloader.sv
 set_global_assignment -name VERILOG_FILE rtl/display.v
@@ -183,4 +187,26 @@ set_global_assignment -name VERILOG_FILE rtl/ps2keyboard.v
 set_global_assignment -name VERILOG_FILE rtl/font_rom.v
 set_global_assignment -name QIP_FILE rtl/pll.qip
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/apple1_mist.sv
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_sprite-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_sprite.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_pattern-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_pattern.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_pack-p.vhd"
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_hor_vert-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_hor_vert.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_ctrl-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_ctrl.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_cpuio-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_cpuio.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_core-c.vhd"
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_core_comp_pack-p.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_core.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_comp_pack-p.vhd"
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_col_pack-p.vhd"
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_col_mux-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_col_mux.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_clk_gen-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_clk_gen.vhd
+set_global_assignment -name VHDL_FILE "rtl/tms9918/vdp18/vdp18_addr_mux-c.vhd"
+set_global_assignment -name VHDL_FILE rtl/tms9918/vdp18/vdp18_addr_mux.vhd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

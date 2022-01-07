@@ -125,7 +125,7 @@ module display (
     //////////////////////////////////////////////////////////////////////////
     // Video RAM
 
-    vram vram(
+    display_ram display_ram(
         .clk(sys_clock),
         .read_addr(vram_r_addr),
         .write_addr(vram_w_addr),
@@ -250,7 +250,7 @@ module display (
 
                 if (address == 1'b0) // address low == TX register
                 begin
-                    if (cpu_clken & w_en & ~char_seen & ready)
+                    if (cpu_clken & w_en /*& ~char_seen*/ & ready)
                     begin
                         // incoming character
                         char_seen <= 1;

@@ -4,19 +4,24 @@
 //
 //
 
+// TODO use a CPU that allows illegal instructions
 // TODO make it work with SDRAM
-// TODO ram refresh lost cycles
+// TODO ram refresh lost CPU cycles
 // TODO power on-off key ? (init ram)
 // TODO ram powerup initial values
 // TODO reorganize file structure
-// TODO support ACI interface for load and save
-// TODO special expansion boards: TMS9918, SID, AY?
+// TODO ACI: create ROM 
+// TODO ACI: implementation
+// TODO more accurate chip selection circuit
 // TODO check diff with updated data_io.v and other modules
+// TODO keyboard: use a PIA
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
 // TODO keyboard: reset key
 // TODO keyboard: make a true ascii keyboard
+// TODO keyboard: check backspace key
 // TODO osd menu yellow, why it doesn't work?
+// TODO display: remove char_seen
 // TODO display: check NTSC AD724 hsync problem
 // TODO display: powerup values
 // TODO display: simplify rom font
@@ -24,7 +29,10 @@
 // TODO display: check parameters vs real apple1
 // TODO display: check cursor blinking vs 555 timings
 // TODO display: emulate PIA registers
-
+// TODO tms9918: fix video sync on composite and mist_video
+// TODO tms9918: make it selectable / use include in code
+// TODO tms9918: connect /INT 
+// TODO sid: implement 6581
 
 module apple1_mist(
    input         CLOCK_27,
@@ -75,9 +83,8 @@ module apple1_mist(
 
 localparam CONF_STR = {
 	"APPLE 1;;",              // 0 download index for "apple1.rom"  
-   "F,PRG,Load program;",    // 1 download index for ".prg" files
-	"F,ROM,Load firmware;",   // 2 download index for ".rom" files
-	"O34,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+   "F,PRG,Load program;",    // 1 download index for ".prg" files	
+	"O2,TMS9918 output,Off,On;",
 	"T6,Reset;",
 	"V,v1.01.",`BUILD_DATE
 };
@@ -93,6 +100,8 @@ wire hs, vs;
 wire [31:0] status;
 wire  [1:0] buttons;
 wire  [1:0] switches;
+
+wire st_tms9918_output = status[2];
 
 wire scandoubler_disable;
 wire ypbpr;
@@ -113,6 +122,7 @@ wire pll_locked;
 
 wire sys_clock;          // cpu x 7 x 8 system clock (sdram.v)
 wire osd_clock;          // cpu x 7 x 2 for the OSD menu
+wire vdp_clock;          // tms9918 x 2 for osd menu 
 
 pll pll 
 (
@@ -121,7 +131,8 @@ pll pll
 	
 	.c0( osd_clock      ),  // cpu x 7 x 2 video clock for OSD menu
    .c2( sys_clock      ),  // cpu x 7 x 8 system clock (sdram.v)
-	.c3( SDRAM_CLK      )   // cpu x 7 x 8 phase shifted -2.5 ns   	
+	.c3( SDRAM_CLK      ),  // cpu x 7 x 8 phase shifted -2.5 ns  
+   .c4( vdp_clock      )   // tms9918 x 2 for osd menu (10.738635 x 2 = 21.47727)
 );
 
 /******************************************************************************************/
@@ -191,15 +202,6 @@ rom_wozmon rom_wozmon(
   .dout(rom_dout)
 );
 
-/*
-// Basic ROM
-wire [7:0] basic_dout;
-rom_basic rom_basic(
-  .clk(sys_clock),
-  .address(cpu_addr[11:0]),
-  .dout(basic_dout)
-);
-*/
 
 // Basic RAM
 wire [7:0] basic_dout;
@@ -211,6 +213,42 @@ ram #(.SIZE(4096)) rom_basic(
   .dout   (basic_dout)
 );
 
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @ACI *******************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+wire [7:0] aci_dout;
+wire CASOUT;
+ACI ACI(
+  .clk(sys_clock),
+  .cpu_clken(cpu_clken),
+  .address(sdram_addr[15:0]),
+  .dout(aci_dout),
+  .tape_in(CASIN),
+  .tape_out(CASOUT),
+);
+
+// latches cassette audio input
+reg CASIN;
+always @(posedge sys_clock) begin
+	CASIN <= ~UART_RX;    // on the Mistica UART_RX is the audio input
+end
+
+wire audio;
+dac #(.C_bits(16)) dac_AUDIO
+(
+	.clk_i(sys_clock),
+   .res_n_i(pll_locked),	
+	.dac_i({ CASOUT, 15'b0000000 }),   // TODO not sure about polarity
+	.dac_o(audio)
+);
+
+always @(posedge sys_clock) begin
+	AUDIO_L <= audio;
+	AUDIO_R <= audio;
+end
 
 /******************************************************************************************/
 /******************************************************************************************/
@@ -253,11 +291,15 @@ wire        cpu_wr;
 
 wire ram_cs   = sdram_addr <  'h4000;                         // 0x0000 -> 0x3FFF
 wire sdram_cs = sdram_addr >= 'h4000 && sdram_addr <= 'hBFFF; // 0x4000 -> 0xBFFF
+wire aci_cs   = sdram_addr >= 'hC000 && sdram_addr <= 'hC1FF; // 0xC000 -> 0xC1FF
+wire tms_cs   = sdram_addr >= 'hCC00 && sdram_addr <= 'hCC01; // 0xCC00 -> 0xCC01
 wire basic_cs = sdram_addr >= 'hE000 && sdram_addr <= 'hEFFF; // 0xE000 -> 0xEFFF
 wire rom_cs   = sdram_addr >= 'hFF00;                         // 0xFF00 -> 0xFFFF
 
 wire [7:0] bus_dout = rom_cs   ? rom_dout   :
                       basic_cs ? basic_dout :
+							 tms_cs   ? vdp_dout   :
+							 aci_cs   ? aci_dout   :
                       sdram_cs ? sdram_dout :
 					       ram_cs   ? ram_dout   :
 					       8'b0;
@@ -300,7 +342,9 @@ mist_video
 #(
 	.COLOR_DEPTH(1),    // 1 bit color depth
 	.OSD_AUTO_CE(1),    // OSD autodetects clock enable
-	.OSD_COLOR(3'b110)  // yellow menu color
+	.OSD_COLOR(3'b110), // yellow menu color
+	.SYNC_AND(1),
+	.SD_HCNT_WIDTH(11)		
 )
 mist_video
 (
@@ -329,11 +373,73 @@ mist_video
 	.VSync(vs),
 	
 	// video output signals that go into MiST hardware
-	.VGA_R(VGA_R),
-	.VGA_G(VGA_G),
-	.VGA_B(VGA_B),
-	.VGA_VS(VGA_VS),
-	.VGA_HS(VGA_HS)	
+	.VGA_R(apple1_R),
+	.VGA_G(apple1_G),
+	.VGA_B(apple1_B),
+	.VGA_VS(apple1_VS),
+	.VGA_HS(apple1_HS)	
+);
+
+wire  [5:0] apple1_R;
+wire  [5:0] apple1_G;
+wire  [5:0] apple1_B;
+wire        apple1_HS;
+wire        apple1_VS;
+
+// mix video
+assign VGA_R   = st_tms9918_output ? tms_R  : apple1_R ;
+assign VGA_G   = st_tms9918_output ? tms_G  : apple1_G ;
+assign VGA_B   = st_tms9918_output ? tms_B  : apple1_B ;
+assign VGA_HS  = st_tms9918_output ? tms_HS & tms_VS : apple1_HS;
+assign VGA_VS  = st_tms9918_output ? tms_VS : apple1_VS;
+
+wire  [5:0] tms_out_R;
+wire  [5:0] tms_out_G;
+wire  [5:0] tms_out_B;
+wire        tms_out_HS;
+wire        tms_out_VS;
+
+mist_video 
+#(
+	.COLOR_DEPTH(6),    // 1 bit color depth
+	.OSD_AUTO_CE(1),    // OSD autodetects clock enable
+	.OSD_COLOR(3'b110), // yellow menu color
+	.SYNC_AND(1),
+	.SD_HCNT_WIDTH(11)	
+)
+tms_mist_video
+(
+	//.clk_sys(vdp_clock),    // OSD needs 2x the VDP clock for the scandoubler
+	.clk_sys(osd_clock),    
+	
+	// OSD SPI interface
+	.SPI_DI(SPI_DI),
+	.SPI_SCK(SPI_SCK),
+	.SPI_SS3(SPI_SS3),
+		
+	.scanlines(2'b00),                           // scanline emulation disabled for now
+	.ce_divider(1),                              // non-scandoubled pixel clock divider 0 - clk_sys/4, 1 - clk_sys/2
+
+	.scandoubler_disable(scandoubler_disable),   // disable scandoubler option from mist.ini	
+	.no_csync(no_csync),                         // csync option from mist.ini
+	.ypbpr(ypbpr),                               // YPbPr option from mist.ini
+
+	.rotate(2'b00),                              // no ODS rotation
+	.blend(0),                                   // composite-like blending
+	
+	// video input	signals to mist_video
+	.R    (tms_R ),
+	.G    (tms_G ),
+	.B    (tms_B ),
+	.HSync(tms_HS),
+	.VSync(tms_vs),
+	
+	// video output signals that go into MiST hardware
+	.VGA_R(tms_out_R),
+	.VGA_G(tms_out_G),
+	.VGA_B(tms_out_B),
+	.VGA_VS(tms_out_VS),
+	.VGA_HS(tms_out_HS)	
 );
 
 /******************************************************************************************/
@@ -450,4 +556,85 @@ clock clock(
   .pixel_clken( pixel_clken   )    // output: pixel clock enable
 );
 
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @vdp *******************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+wire        vram_we;
+wire [0:13] vram_a;        
+wire [0:7]  vram_din;      
+wire [0:7]  vram_dout;
+
+vram vram
+(
+  .clock  ( vdp_clock  ),  
+  .address( vram_a     ),  
+  .data   ( vram_din   ),                       
+  .wren   ( vram_we    ),                       
+  .q      ( vram_dout  )
+);
+
+wire [7:0] vdp_dout;
+wire VDP_INT_n;         // TODO not connected yet
+
+// divide by two the vdp_clock (which is doubled for the scandoubler)
+reg vdp_ena;
+always @(posedge vdp_clock) begin
+	vdp_ena <= ~vdp_ena;
+end
+
+wire csr = tms_cs & sdram_rd;
+wire csw = tms_cs & sdram_wr;
+
+wire         tms_HS;
+wire         tms_VS;
+wire   [5:0] tms_R;
+wire   [5:0] tms_G;
+wire   [5:0] tms_B;
+
+tms9918_async 
+#(
+	.HORIZONTAL_SHIFT(-36)    // -36 good empiric value to center the image on the screen
+) 
+tms9918
+(
+	// clock
+	.RESET(reset_button),
+	
+	.clk(vdp_clock),
+	.ena(vdp_ena),
+	
+	/*
+	.clk(sys_clock),
+	.ena(pixel_clken),
+	*/
+	
+	// control signals
+   .csr_n  ( ~csr          ),
+   .csw_n  ( ~csw          ),
+	.mode   ( sdram_addr[0] ),	    
+   .int_n  ( VDP_INT_n     ),
+
+	// cpu I/O 	
+   .cd_i          ( sdram_din   ),
+   .cd_o          ( vdp_dout    ),
+		
+	//	vram	
+   .vram_we       ( vram_we     ),
+   .vram_a        ( vram_a      ),
+   .vram_d_o      ( vram_din    ),
+   .vram_d_i      ( vram_dout   ),		
+		
+	// video 
+	.HS(tms_HS),
+	.VS(tms_VS),
+	.R (tms_R),
+	.G (tms_G),
+	.B (tms_B)
+);
+
 endmodule 
+
