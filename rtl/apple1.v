@@ -49,10 +49,10 @@ module apple1(
     input vga_cls               // clear screen button
 );
 
-assign ram_addr = addr;
-assign ram_din  = cpu_dout;
-assign ram_rd   = ram_cs;
-assign ram_wr   = we & ram_cs;  
+   assign ram_addr = addr;
+   assign ram_din  = cpu_dout;
+   assign ram_rd   = ram_cs;
+   assign ram_wr   = we & ram_cs;  
 
     //////////////////////////////////////////////////////////////////////////
     // Registers and Wires
