@@ -224,7 +224,7 @@ wire CASOUT;
 ACI ACI(
   .clk(sys_clock),
   .cpu_clken(cpu_clken),
-  .address(sdram_addr[15:0]),
+  .addr(sdram_addr[15:0]),
   .dout(aci_dout),
   .tape_in(CASIN),
   .tape_out(CASOUT),
