@@ -12,7 +12,6 @@
 // TODO ACI: wav tools
 // TODO A-F chip selection banks?
 // TODO check diff with updated data_io.v and other modules
-// TODO why F5 (reset) can't be pressed twice
 // TODO keyboard: use a PIA
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
@@ -27,7 +26,6 @@
 // TODO display: emulate PIA registers
 // TODO tms9918: fix video sync on composite and mist_video
 // TODO tms9918: make it selectable / use include in code
-// TODO tms9918: connect /INT 
 // TODO sid: implement 6581
 // *TODO make it work with SDRAM
 
