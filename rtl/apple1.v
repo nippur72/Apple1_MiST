@@ -39,6 +39,9 @@ module apple1(
     // I/O interface to keyboard
     input ps2_clk,              // PS/2 keyboard serial clock input
     input ps2_din,              // PS/2 keyboard serial data input
+	 
+	 // interrupt signa
+	 input INT_n,
 
     // Outputs to VGA display
     output vga_h_sync,          // hozizontal VGA sync pulse
@@ -76,7 +79,7 @@ module apple1(
         .dbi    (cpu_din),
         .dbo    (cpu_dout),
         .we     (we),
-        .irq_n  (1'b1),
+        .irq_n  (INT_n),
         .nmi_n  (1'b1),
         .ready  (cpu_clken)        
     );

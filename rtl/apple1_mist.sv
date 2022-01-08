@@ -6,8 +6,7 @@
 
 // TODO use a CPU that allows illegal instructions
 // TODO ram refresh lost CPU cycles
-// TODO power on-off key ? (init ram)
-// TODO implement power off/on with F9
+// TODO power on-off key ? init ram with values
 // TODO ram powerup initial values
 // TODO reorganize file structure
 // TODO ACI: wav tools
@@ -332,9 +331,13 @@ apple1 apple1
 	.ram_dout (bus_dout),
 	.ram_rd   (cpu_rd),
 	.ram_wr   (cpu_wr),
-		
+
+	// ps2 keyboard	
 	.ps2_clk(ps2_kbd_clk),
 	.ps2_din(ps2_kbd_data),
+	
+	// interrupt signal
+	.INT_n(VDP_INT_n),
 
 	.vga_h_sync(hs),
    .vga_v_sync(vs),
@@ -595,7 +598,7 @@ vram vram
 );
 
 wire [7:0] vdp_dout;
-wire VDP_INT_n;         // TODO not connected yet
+wire VDP_INT_n;         
 
 // divide by two the vdp_clock (which is doubled for the scandoubler)
 reg vdp_ena;
