@@ -34,7 +34,9 @@ module ps2keyboard (
     input       address,    // =0 RX buffer, =1 RX status
     output reg [7:0] dout,  // 8-bit output bus.
 	 
-	 output reg  cls_key     // F1 acts as clear screeen hardware button
+	 output reg  cls_key,       // F1 acts as clear screeen hardware button
+	 output reg  reset_key,     // F5 acts as reset key
+	 output reg  poweroff_key   // F9 acts as power on/off
 );
 
     reg [3:0]  rxcnt;       // count how many bits have been shift into rxshiftbuf
@@ -180,6 +182,8 @@ module ps2keyboard (
                                     if (!shift)
                                         case(rx)
 													     8'h05:  cls_key <= 1;
+														  8'h03:  reset_key <= 1;
+														  8'h01:  poweroff_key <= 1;
                                             8'h1C:  ascii <= "A";
                                             8'h32:  ascii <= "B";
                                             8'h21:  ascii <= "C";
@@ -312,6 +316,8 @@ module ps2keyboard (
                                 shift <= 1'b0;
                             next_state = S_KEYNORMAL;
 									 cls_key <= 0;
+									 reset_key <= 0;
+									 poweroff_key <= 0;
                         end
                     S_KEYE0:
                         begin

@@ -46,7 +46,10 @@ module apple1(
     output vga_red,             // red VGA signal
     output vga_grn,             // green VGA signal
     output vga_blu,             // blue VGA signal
-    input vga_cls               // clear screen button
+    input vga_cls,              // clear screen button
+	 
+	 output reset_key,           // keyboard shortcut for reset
+	 output poweroff_key         // keyboard shortcut for poweroff/on
 );
 
    assign ram_addr = addr;
@@ -102,7 +105,9 @@ module apple1(
         .cs(keyboard_cs),
         .address(addr[0]),
         .dout(ps2_dout),
-		  .cls_key(cls_key)
+		  .cls_key(cls_key),
+		  .reset_key(reset_key),
+		  .poweroff_key(poweroff_key)
     );
 
 	 wire PB7; // (negated) display ready (PB7 of CIA)

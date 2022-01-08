@@ -5,19 +5,19 @@
 //
 
 // TODO use a CPU that allows illegal instructions
-// TODO make it work with SDRAM
 // TODO ram refresh lost CPU cycles
 // TODO power on-off key ? (init ram)
+// TODO implement power off/on with F9
 // TODO ram powerup initial values
 // TODO reorganize file structure
 // TODO ACI: wav tools
 // TODO ACI: audio monitor menu option
 // TODO more accurate chip selection circuit
 // TODO check diff with updated data_io.v and other modules
+// TODO why F5 (reset) can't be pressed twice
 // TODO keyboard: use a PIA
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
-// TODO keyboard: reset key
 // TODO keyboard: make a true ascii keyboard
 // TODO keyboard: check backspace key
 // TODO osd menu yellow, why it doesn't work?
@@ -33,6 +33,7 @@
 // TODO tms9918: make it selectable / use include in code
 // TODO tms9918: connect /INT 
 // TODO sid: implement 6581
+// *TODO make it work with SDRAM
 
 module apple1_mist(
    input         CLOCK_27,
@@ -85,14 +86,15 @@ localparam CONF_STR = {
 	"APPLE 1;;",              // 0 download index for "apple1.rom"  
    "F,PRG,Load program;",    // 1 download index for ".prg" files	
 	"O2,TMS9918 output,Off,On;",
-	"T6,Reset;",
+	"O3,Audio monitor,tape in,tape out;",
+	"T6,Reset (F5);",
 	"V,v1.01.",`BUILD_DATE
 };
 
 localparam conf_str_len = $size(CONF_STR)>>3;
 
 wire st_reset_switch = buttons[1];
-wire st_menu_reset   = status[6];
+
 
 wire r, g, b;
 wire hs, vs;
@@ -101,7 +103,9 @@ wire [31:0] status;
 wire  [1:0] buttons;
 wire  [1:0] switches;
 
-wire st_tms9918_output = status[2];
+wire st_tms9918_output    = status[2];
+wire st_audio_mon_tape_in = ~status[3];
+wire st_menu_reset        = status[6];
 
 wire scandoubler_disable;
 wire ypbpr;
@@ -110,7 +114,7 @@ wire no_csync;
 wire ps2_kbd_clk;
 wire ps2_kbd_data;
 
-wire reset_button = status[0] | st_menu_reset | st_reset_switch | !pll_locked;
+wire reset_button = status[0] | st_menu_reset | st_reset_switch | reset_key_edge |!pll_locked;
 
 /******************************************************************************************/
 /******************************************************************************************/
@@ -237,11 +241,13 @@ always @(posedge sys_clock) begin
 end
 
 wire audio;
+wire audio_monitor = st_audio_mon_tape_in ? CASIN : CASOUT ;
+
 dac #(.C_bits(16)) dac_AUDIO
 (
 	.clk_i(sys_clock),
    .res_n_i(pll_locked),	
-	.dac_i({ CASOUT, 15'b0000000 }),   // TODO not sure about polarity
+	.dac_i({ audio_monitor, 15'b0000000 }),
 	.dac_o(audio)
 );
 
@@ -304,6 +310,17 @@ wire [7:0] bus_dout = rom_cs   ? rom_dout   :
 					       ram_cs   ? ram_dout   :
 					       8'b0;
 
+wire reset_key;
+wire poweroff_key;							 
+
+// detects the rising edge of the keyboard reset key
+// otherwise keyboard stays in reset mode
+wire reset_key_edge = reset_key_old == 0 && reset_key == 1; 
+reg reset_key_old = 0;
+always @(posedge sys_clock) begin
+	reset_key_old <= reset_key;
+end
+							 
 apple1 apple1 
 (  
 	.reset(reset_button), 
@@ -328,7 +345,10 @@ apple1 apple1
 	.vga_grn(g),
 	.vga_blu(b),
 
-	.vga_cls()               // clear screen button (not connected yet) 
+	.vga_cls(),               // clear screen button (not connected yet) 
+	
+	.reset_key(reset_key),       // keyboard shortcut for reset
+	.poweroff_key(poweroff_key)  // keyboard shortcut for power off/on
 );
 
 
