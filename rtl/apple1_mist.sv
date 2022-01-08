@@ -552,7 +552,7 @@ clock clock(
   .reset      ( reset_button  ),   // input: reset signal
 
   .cpu_clock  ( cpu_clock     ),  
-  .cpu_clken  ( cpu_clken     ),   // output: cpu clock enable
+  .cpu_clken  ( cpu_clken     ),   // output: cpu clock enable (phi2)
   .pixel_clken( pixel_clken   )    // output: pixel clock enable
 );
 
