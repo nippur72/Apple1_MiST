@@ -10,8 +10,8 @@
 // TODO power on-off key ? (init ram)
 // TODO ram powerup initial values
 // TODO reorganize file structure
-// TODO ACI: create ROM 
-// TODO ACI: implementation
+// TODO ACI: wav tools
+// TODO ACI: audio monitor menu option
 // TODO more accurate chip selection circuit
 // TODO check diff with updated data_io.v and other modules
 // TODO keyboard: use a PIA
