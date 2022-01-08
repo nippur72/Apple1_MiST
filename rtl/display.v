@@ -66,14 +66,9 @@ module display (
     wire [4:0] font_line;
     wire font_out;
 
-    // cpu control registers
-    reg char_seen;
-
     // active region strobes
     wire h_active = (h_cnt >= hbp && h_cnt < hfp);
-    wire v_active = (v_cnt >= vbp && v_cnt < vfp);
-	 
-	 
+    wire v_active = (v_cnt >= vbp && v_cnt < vfp);	 
 
     // horizontal and vertical counters
     always @(posedge sys_clock or posedge reset) begin
@@ -207,8 +202,7 @@ module display (
     begin
         if (reset) begin
             h_cursor <= 6'd0;
-            v_cursor <= 5'd0;
-            char_seen <= 'b0;
+            v_cursor <= 5'd0;            
             vram_start_addr <= 5'd0;
             vram_end_addr <= 5'd24;
 				ready <= 0;
@@ -250,10 +244,9 @@ module display (
 
                 if (address == 1'b0) // address low == TX register
                 begin
-                    if (cpu_clken & w_en /*& ~char_seen*/ & ready)
+                    if (cpu_clken & w_en & ready)
                     begin
-                        // incoming character
-                        char_seen <= 1;
+                        // incoming character                        
 					         ready <= 0;			
 
                         case(din)
@@ -279,9 +272,7 @@ module display (
                             h_cursor <= h_cursor + 1;
                         end
                         endcase
-                    end
-                    else if(~cpu_clken & ~w_en)
-                        char_seen <= 0;								
+                    end                    
                 end
                 else
                 begin

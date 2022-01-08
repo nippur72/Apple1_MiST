@@ -11,17 +11,14 @@
 // TODO ram powerup initial values
 // TODO reorganize file structure
 // TODO ACI: wav tools
-// TODO ACI: audio monitor menu option
-// TODO more accurate chip selection circuit
+// TODO A-F chip selection banks?
 // TODO check diff with updated data_io.v and other modules
 // TODO why F5 (reset) can't be pressed twice
 // TODO keyboard: use a PIA
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
 // TODO keyboard: make a true ascii keyboard
-// TODO keyboard: check backspace key
 // TODO osd menu yellow, why it doesn't work?
-// TODO display: remove char_seen
 // TODO display: check NTSC AD724 hsync problem
 // TODO display: powerup values
 // TODO display: simplify rom font
