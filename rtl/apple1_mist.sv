@@ -2,10 +2,9 @@
 //
 // Forked from Gehstock's implementation https://github.com/Gehstock/Mist_FPGA
 //
-//
 
+// TODO display: crosstalk artifact (selectable)
 // TODO use a CPU that allows illegal instructions
-// TODO ram refresh lost CPU cycles
 // TODO power on-off key ? init ram with values
 // TODO ram powerup initial values
 // TODO reorganize file structure
@@ -168,11 +167,11 @@ downloader
    .ROM_done    ( ROM_loaded      ),	
 	         
    // external ram interface
-   .clk     ( sys_clock     ),
-	.clk_ena ( cpu_clken     ),
-   .wr      ( download_wr   ),
-   .addr    ( download_addr ),
-   .data    ( download_data )	
+   .clk     ( sys_clock      ),
+	.clk_ena ( cpu_clken_noRF ),
+   .wr      ( download_wr    ),
+   .addr    ( download_addr  ),
+   .data    ( download_data  )	
 );
 
 /******************************************************************************************/
@@ -561,19 +560,20 @@ sdram sdram (
 /******************************************************************************************/
 /******************************************************************************************/
 
-wire cpu_clken;    // provides the cpu clock enable signal derived from main clock
-wire pixel_clken;  // provides the cpu clock enable signal derived from main clock
-wire cpu_clock;
+wire pixel_clken;    // provides the cpu clock enable signal derived from main clock
+wire cpu_clken;      // provides the cpu clock enable signal derived from main clock, ram refresh accounted
+wire cpu_clken_noRF; // provides the cpu clock enable signal derived from main clock, without accounting for refresh cycles
+wire cpu_clock;      // cpu clock for the sdram controller sync
 
 clock clock(
   .sys_clock  ( sys_clock     ),   // input: main clock
   .reset      ( reset_button  ),   // input: reset signal
 
-  .cpu_clock  ( cpu_clock     ),  
-  .cpu_clken  ( cpu_clken     ),   // output: cpu clock enable (phi2)
-  .pixel_clken( pixel_clken   )    // output: pixel clock enable
+  .cpu_clock      ( cpu_clock      ),  
+  .cpu_clken      ( cpu_clken      ),   // output: cpu clock enable (phi2)
+  .cpu_clken_noRF ( cpu_clken_noRF ),   // output: cpu clock enable (phi0)
+  .pixel_clken    ( pixel_clken    )    // output: pixel clock enable
 );
-
 
 /******************************************************************************************/
 /******************************************************************************************/
