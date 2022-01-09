@@ -8,11 +8,11 @@ module display (
 	 input clr_screen,       // clear screen button
 	 
 	 // video output	
-    output vga_h_sync,      // horizontal VGA sync pulse
-    output vga_v_sync,      // vertical VGA sync pulse
-    output vga_red,         // red VGA signal
-    output vga_grn,         // green VGA signal
-    output vga_blu,         // blue VGA signal
+    output       vga_h_sync, // horizontal sync pulse
+    output       vga_v_sync, // vertical sync pulse
+    output [5:0] vga_red,    // red signal
+    output [5:0] vga_grn,    // green signal
+    output [5:0] vga_blu,    // blue signal
 	 
 	 output reg ready,       // display ready (PB7 of CIA)
 
@@ -184,11 +184,15 @@ module display (
     assign font_pixel = h_dot;     
                                    
     assign font_line = v_dot * 2 + 4;
+	 
+	 wire cross_talk_artifact = (h_active & v_active) && v_dot == 0 && h_dot == 0;
+	 
+	 wire [5:0] pixel_out = { font_out, font_out, font_out, font_out, font_out | cross_talk_artifact, font_out };
 
     // vga signals out to monitor
-    assign vga_red = (h_active & v_active) ? font_out : 1'b0;
-    assign vga_grn = (h_active & v_active) ? font_out : 1'b0;    
-	 assign vga_blu = (h_active & v_active) ? font_out : 1'b0;
+    assign vga_red = (h_active & v_active) ? pixel_out : 6'b0;
+    assign vga_grn = (h_active & v_active) ? pixel_out : 6'b0;    
+	 assign vga_blu = (h_active & v_active) ? pixel_out : 6'b0;
 
     assign vga_h_sync = (h_cnt < h_pulse) ? 0 : 1;
     assign vga_v_sync = (v_cnt < v_pulse) ? 0 : 1;

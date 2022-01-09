@@ -43,13 +43,12 @@ module apple1(
 	 // interrupt signa
 	 input INT_n,
 
-    // Outputs to VGA display
-    output vga_h_sync,          // hozizontal VGA sync pulse
-    output vga_v_sync,          // vertical VGA sync pulse
-    output vga_red,             // red VGA signal
-    output vga_grn,             // green VGA signal
-    output vga_blu,             // blue VGA signal
-    input vga_cls,              // clear screen button
+    // video outputs
+    output       vga_h_sync,          // hozizontal sync pulse
+    output       vga_v_sync,          // vertical sync pulse
+    output [5:0] vga_red,             // red signal
+    output [5:0] vga_grn,             // green signal
+    output [5:0] vga_blu,             // blue signal    
 	 
 	 output reset_key,           // keyboard shortcut for reset
 	 output poweroff_key         // keyboard shortcut for poweroff/on

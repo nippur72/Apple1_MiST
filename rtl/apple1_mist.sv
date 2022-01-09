@@ -15,10 +15,10 @@
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
 // TODO keyboard: make a true ascii keyboard
+// TODO keyboard: why can't be reset hit twice ?
 // TODO osd menu yellow, why it doesn't work?
 // TODO display: check NTSC AD724 hsync problem
-// TODO display: powerup values
-// TODO display: simplify rom font
+// TODO display: blinking at powerup
 // TODO display: reduce to 512 bytes font
 // TODO display: check parameters vs real apple1
 // TODO display: check cursor blinking vs 555 timings
@@ -87,10 +87,6 @@ localparam CONF_STR = {
 localparam conf_str_len = $size(CONF_STR)>>3;
 
 wire st_reset_switch = buttons[1];
-
-
-wire r, g, b;
-wire hs, vs;
 
 wire [31:0] status;
 wire  [1:0] buttons;
@@ -306,6 +302,11 @@ wire [7:0] bus_dout = rom_cs   ? rom_dout   :
 wire reset_key;
 wire poweroff_key;							 
 
+wire [5:0] r;
+wire [5:0] g;
+wire [5:0] b;
+wire hs, vs;
+
 // detects the rising edge of the keyboard reset key
 // otherwise keyboard stays in reset mode
 wire reset_key_edge = reset_key_old == 0 && reset_key == 1; 
@@ -357,7 +358,7 @@ apple1 apple1
 
 mist_video 
 #(
-	.COLOR_DEPTH(1),    // 1 bit color depth
+	.COLOR_DEPTH(6),    // 1 bit color depth
 	.OSD_AUTO_CE(1),    // OSD autodetects clock enable
 	.OSD_COLOR(3'b110), // yellow menu color
 	.SYNC_AND(1),

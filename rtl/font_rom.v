@@ -30,12 +30,14 @@ module font_rom (
     );
 
     reg [7:0] rom[0:1023];
+	 //reg [7:0] rom[0:511];
 
     initial
         $readmemh("roms/vga_font_bitreversed.hex", rom, 0, 1023);
+		  //$readmemb("roms/s2513.bin", rom, 0, 511);
 
     // double height of pixel by ignoring bit 0
-    wire [3:0] line_ptr = line[4:1];
+    wire [3:0] line_ptr = line[4:1];	 
 
     // Note: Quartus II reverses the pixels when we do:
     //
@@ -53,6 +55,7 @@ module font_rom (
     always @(posedge clk)
     begin
         romout = rom[(character * 10) + {2'd0, line_ptr}];
+		  //romout = rom[(character * 8) + {2'd0, line_ptr}];
         
         out <= romout[pixel];
     end
