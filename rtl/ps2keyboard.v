@@ -125,9 +125,11 @@ module ps2keyboard (
             shift       <= 0;
             cur_state   <= S_KEYNORMAL;
 				
+				/*
   			   cls_key <= 0;
 			   reset_key <= 0;
 			   poweroff_key <= 0;
+				*/
 				
         end
         else
