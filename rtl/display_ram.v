@@ -35,7 +35,8 @@ module display_ram (
     reg [5:0] ram_data[0:2047];
 
     initial
-        $readmemb("roms/vga_vram.bin", ram_data, 0, 2047);
+        //$readmemb("roms/vram_powerup_pattern.bin", ram_data, 0, 2047);
+		  $readmemb("roms/vram_empty.bin", ram_data, 0, 2047);
 
     always @(posedge clk)
     begin
