@@ -67,7 +67,7 @@ followed by a "W", e.g.:
 ````
 Note: press record & play on tape before pressing (enter) on the ACI.
 
-## Acknoledgments
+## Acknowledgments
 
 This FPGA core is based on the previous projects:
 - [apple-one](https://github.com/alangarf/apple-one) by Alan Garfield
