@@ -73,6 +73,6 @@ This FPGA core is based on the previous projects:
 - [apple-one](https://github.com/alangarf/apple-one) by Alan Garfield
 - [Mist_FPGA](https://github.com/Gehstock/Mist_FPGA) by Gehstock
 
-Thanks also to [P-L4B](https://github.com/P-L4B) and [UncleBernie](https://www.applefritter.com/users/unclebernie, for all the techincal details and explanations that alloed me to write
+Thanks also to [P-L4B](https://github.com/P-L4B) and [UncleBernie](https://www.applefritter.com/users/unclebernie), for all the techincal details and explanations that alloed me to write
 a more accurate implementation.
 
