@@ -156,20 +156,24 @@ module display (
     end
 
     //////////////////////////////////////////////////////////////////////////
-    // Cursor blink
+    // Cursor blinking. 
+	 // On the real Apple-I it's made via a 555 configured to trigger 1.92 Hz
 
-    reg blink;
-    reg [22:0] blink_div;
+	 localparam blink_max    = 7457385;                  // 14318180/2/(1.92/2)
+	 localparam blink_thr    = blink_max * 3/4;          // ~3/4 duty cycle
+	 localparam blink_rewind = blink_thr - (455 * 262);  // sets blinking 1 frame before cursor turns on
+	 
+    reg [31:0] blink_cnt;
+	 wire cursor_on = blink_cnt > blink_thr;
     always @(posedge sys_clock or posedge reset)
-    begin
-        if (reset)
-            blink_div <= 0;
-        else
-		  if(pixel_clken) begin
-            blink_div <= blink_div + 1;
-
-            if (blink_div == 23'd0)
-                blink <= ~blink;
+    begin	     
+        if (reset) 	      
+            blink_cnt <= 0;						  
+        else 
+		  if(pixel_clken) begin		      
+		           if(cpu_clken & w_en & ready) blink_cnt <= blink_rewind;    // when a char is received, blinking is turned off briefly
+		      else if(blink_cnt > blink_max)    blink_cnt <= 0;
+				else                              blink_cnt <= blink_cnt + 1;
         end
     end
 
@@ -179,8 +183,10 @@ module display (
     // vram to font rom to display pipeline assignments
     assign cursor = {v_cursor, h_cursor};
     assign vram_r_addr = {vram_v_addr, vram_h_addr};
+	 
+	 wire [5:0] cursor_character = cursor_on ? 6'd0 : 6'd32;
 
-    assign font_char = (vram_r_addr != cursor) ? vram_dout : (blink) ? 6'd0 : 6'd32;
+    assign font_char = (vram_r_addr != cursor) ? vram_dout : cursor_character;
     assign font_pixel = h_dot;     
                                    
     assign font_line = v_dot * 2 + 4;
