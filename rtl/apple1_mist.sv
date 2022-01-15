@@ -3,12 +3,11 @@
 // Forked from Gehstock's implementation https://github.com/Gehstock/Mist_FPGA
 //
 
-// TODO display: crosstalk artifact (selectable)
+// TODO make roms loadable
 // TODO use a CPU that allows illegal instructions
 // TODO power on-off key ? init ram with values
 // TODO ram powerup initial values
 // TODO reorganize file structure
-// TODO ACI: wav tools
 // TODO A-F chip selection banks?
 // TODO check diff with updated data_io.v and other modules
 // TODO keyboard: use a PIA
@@ -16,12 +15,10 @@
 // TODO keyboard: check ps2 clock
 // TODO keyboard: make a true ascii keyboard
 // TODO keyboard: why can't be reset hit twice ?
-// TODO osd menu yellow, why it doesn't work?
-// TODO display: check NTSC AD724 hsync problem
-// TODO display: blinking at powerup
+// TODO display: crosstalk artifact (selectable)
+// TODO display: check NTSC AD724 hsync problem (yellow menu doesn't work)
 // TODO display: reduce to 512 bytes font
 // TODO display: check parameters vs real apple1
-// TODO display: check cursor blinking vs 555 timings
 // TODO display: emulate PIA registers
 // TODO tms9918: fix video sync on composite and mist_video
 // TODO tms9918: make it selectable / use include in code
