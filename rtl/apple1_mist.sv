@@ -25,8 +25,7 @@
 // TODO display: emulate PIA registers
 // TODO tms9918: fix video sync on composite and mist_video
 // TODO tms9918: make it selectable / use include in code
-// TODO sid: implement 6581
-// *TODO make it work with SDRAM
+// TODO sid: unsigned vs signed dac ?
 
 module apple1_mist(
    input         CLOCK_27,
@@ -229,20 +228,33 @@ always @(posedge sys_clock) begin
 	CASIN <= ~UART_RX;    // on the Mistica UART_RX is the audio input
 end
 
-wire audio;
-wire audio_monitor = st_audio_mon_tape_in ? CASIN : CASOUT ;
+wire audio_tape_monitor = st_audio_mon_tape_in ? CASIN : CASOUT ;
 
-dac #(.C_bits(16)) dac_AUDIO
+wire audio_tape_monitor_1bit;
+dac #(.C_bits(16)) dac_tape_monitor
 (
 	.clk_i(sys_clock),
    .res_n_i(pll_locked),	
-	.dac_i({ audio_monitor, 15'b0000000 }),
-	.dac_o(audio)
+	.dac_i({ audio_tape_monitor, 15'b0000000 }),
+	.dac_o(audio_tape_monitor_1bit)
+);
+
+wire sid_audio_out_1bit;
+wire signed [18:0] sid_audio_out_combined = sid_audio_out_l + sid_audio_out_r;
+wire signed [15:0] sid_audio_out_combined1 = sid_audio_out_combined[18:3];
+wire        [15:0] sid_audio_out_combined2 = sid_audio_out_combined1 + 32767;
+
+dac #(.C_bits(16)) dac_SID
+(
+	.clk_i(sys_clock),
+   .res_n_i(pll_locked),	
+	.dac_i(sid_audio_out_combined2),
+	.dac_o(sid_audio_out_1bit)
 );
 
 always @(posedge sys_clock) begin
-	AUDIO_L <= audio;
-	AUDIO_R <= audio;
+	AUDIO_L <= audio_tape_monitor_1bit;
+	AUDIO_R <= sid_audio_out_1bit;
 end
 
 /******************************************************************************************/
@@ -288,12 +300,14 @@ wire ram_cs   = sdram_addr <  'h4000;                         // 0x0000 -> 0x3FF
 wire sdram_cs = sdram_addr >= 'h4000 && sdram_addr <= 'hBFFF; // 0x4000 -> 0xBFFF
 wire aci_cs   = sdram_addr >= 'hC000 && sdram_addr <= 'hC1FF; // 0xC000 -> 0xC1FF
 wire tms_cs   = sdram_addr >= 'hCC00 && sdram_addr <= 'hCC01; // 0xCC00 -> 0xCC01
+wire sid_cs   = sdram_addr >= 'hC200 && sdram_addr <= 'hCCFF; // 0xCC00 -> 0xCCFF
 wire basic_cs = sdram_addr >= 'hE000 && sdram_addr <= 'hEFFF; // 0xE000 -> 0xEFFF
 wire rom_cs   = sdram_addr >= 'hFF00;                         // 0xFF00 -> 0xFFFF
 
 wire [7:0] bus_dout = rom_cs   ? rom_dout   :
                       basic_cs ? basic_dout :
-							 tms_cs   ? vdp_dout   :
+						  //tms_cs   ? vdp_dout   :
+ 							 sid_cs   ? vdp_dout   :
 							 aci_cs   ? aci_dout   :
                       sdram_cs ? sdram_dout :
 					       ram_cs   ? ram_dout   :
@@ -653,6 +667,38 @@ tms9918
 	.R (tms_R),
 	.G (tms_G),
 	.B (tms_B)
+);
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @sid *******************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+// TODO generic g_filter_div
+wire [7:0] sid_dout;
+wire signed [17:0] sid_audio_out_l;
+wire signed [17:0] sid_audio_out_r;
+sid_top sid_top
+(
+    .clock(sys_clock),
+    .reset(reset_button),
+                  
+    .addr(sdram_addr[7:0]),
+    .wren(cpu_wr & sid_cs),          
+    .wdata(sdram_din),
+    .rdata(sid_dout),         
+
+    .potx(0),
+    .poty(0),
+
+    .comb_wave_l(0),
+    .comb_wave_r(0),
+
+    .start_iter(cpu_clken),
+    .sample_left(sid_audio_out_l),
+    .sample_right(sid_audio_out_r),	 
+	 .extfilter_en(0)
 );
 
 endmodule 
