@@ -15,14 +15,17 @@
 // TODO keyboard: check ps2 clock
 // TODO keyboard: make a true ascii keyboard
 // TODO keyboard: why can't be reset hit twice ?
-// TODO display: crosstalk artifact (selectable)
+// TODO display: menu selectable crosstalk artifact
 // TODO display: check NTSC AD724 hsync problem (yellow menu doesn't work)
 // TODO display: reduce to 512 bytes font
 // TODO display: check parameters vs real apple1
 // TODO display: emulate PIA registers
 // TODO tms9918: fix video sync on composite and mist_video
-// TODO tms9918: make it selectable / use include in code
+// TODO tms9918: make it selectable via keyboard
 // TODO sid: unsigned vs signed dac ?
+
+//`define USE_SID 1
+//`define USE_TMS 1
 
 module apple1_mist(
    input         CLOCK_27,
@@ -74,10 +77,18 @@ module apple1_mist(
 localparam CONF_STR = {
 	"APPLE 1;;",              // 0 download index for "apple1.rom"  
    "F,PRG,Load program;",    // 1 download index for ".prg" files	
+`ifdef USE_TMS	
 	"O2,TMS9918 output,Off,On;",
+`endif
 	"O3,Audio monitor,tape in,tape out;",
-	"T6,Reset (F5);",
-	"V,v1.01.",`BUILD_DATE
+	"T6,Reset;",
+	"V,",`BUILD_DATE
+`ifdef USE_SID
+	,"+SID"
+`endif
+`ifdef USE_TMS	
+	,"+TMS"
+`endif
 };
 
 localparam conf_str_len = $size(CONF_STR)>>3;
@@ -236,22 +247,20 @@ dac #(.C_bits(16)) dac_tape_monitor
 	.dac_o(audio_tape_monitor_1bit)
 );
 
-wire sid_audio_out_1bit;
-wire signed [18:0] sid_audio_out_combined = sid_audio_out_l + sid_audio_out_r;
-wire signed [15:0] sid_audio_out_combined1 = sid_audio_out_combined[18:3];
-wire        [15:0] sid_audio_out_combined2 = sid_audio_out_combined1 + 32767;
-
-dac #(.C_bits(16)) dac_SID
-(
-	.clk_i(sys_clock),
-   .res_n_i(pll_locked),	
-	.dac_i(sid_audio_out_combined2),
-	.dac_o(sid_audio_out_1bit)
-);
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @audio *****************************************/
+/******************************************************************************************/
+/******************************************************************************************/
 
 always @(posedge sys_clock) begin
+`ifdef USE_SID
 	AUDIO_L <= audio_tape_monitor_1bit;
 	AUDIO_R <= sid_audio_out_1bit;
+`else
+	AUDIO_L <= audio_tape_monitor_1bit;
+	AUDIO_R <= audio_tape_monitor_1bit;
+`endif
 end
 
 /******************************************************************************************/
@@ -296,15 +305,29 @@ wire        cpu_wr;
 wire ram_cs   = sdram_addr <  'h4000;                         // 0x0000 -> 0x3FFF
 wire sdram_cs = sdram_addr >= 'h4000 && sdram_addr <= 'hBFFF; // 0x4000 -> 0xBFFF
 wire aci_cs   = sdram_addr >= 'hC000 && sdram_addr <= 'hC1FF; // 0xC000 -> 0xC1FF
-wire tms_cs   = sdram_addr >= 'hCC00 && sdram_addr <= 'hCC01; // 0xCC00 -> 0xCC01
-wire sid_cs   = sdram_addr >= 'hC200 && sdram_addr <= 'hCCFF; // 0xCC00 -> 0xCCFF
 wire basic_cs = sdram_addr >= 'hE000 && sdram_addr <= 'hEFFF; // 0xE000 -> 0xEFFF
 wire rom_cs   = sdram_addr >= 'hFF00;                         // 0xFF00 -> 0xFFFF
 
+// experimental SID 6561 
+`ifdef USE_SID
+	wire sid_cs   = sdram_addr >= 'hC800 && sdram_addr <= 'hC8FF; // 0xC800 -> 0xC8FF
+`else
+	wire sid_cs   = 0;
+	wire sid_dout = 0;
+`endif
+
+// experimental TMS9918
+`ifdef USE_TMS
+	wire tms_cs   = sdram_addr >= 'hCC00 && sdram_addr <= 'hCC01; // 0xCC00 -> 0xCC01	
+`else
+	wire tms_cs   = 0;
+	wire vdp_dout = 0;
+`endif
+
 wire [7:0] bus_dout = rom_cs   ? rom_dout   :
                       basic_cs ? basic_dout :
-						  //tms_cs   ? vdp_dout   :
- 							 sid_cs   ? vdp_dout   :
+						    tms_cs   ? vdp_dout   :
+ 							 sid_cs   ? sid_dout   :
 							 aci_cs   ? aci_dout   :
                       sdram_cs ? sdram_dout :
 					       ram_cs   ? ram_dout   :
@@ -346,7 +369,11 @@ apple1 apple1
 	.ps2_din(ps2_kbd_data),
 	
 	// interrupt signal
+`ifdef USE_TMS
 	.INT_n(VDP_INT_n),
+`else
+	.INT_n(1),
+`endif
 
 	.vga_h_sync(hs),
    .vga_v_sync(vs),
@@ -416,12 +443,21 @@ wire        apple1_HS;
 wire        apple1_VS;
 
 // mix video
-assign VGA_R   = st_tms9918_output ? tms_R  : apple1_R ;
-assign VGA_G   = st_tms9918_output ? tms_G  : apple1_G ;
-assign VGA_B   = st_tms9918_output ? tms_B  : apple1_B ;
-assign VGA_HS  = st_tms9918_output ? tms_HS & tms_VS : apple1_HS;
-assign VGA_VS  = st_tms9918_output ? tms_VS : apple1_VS;
+`ifdef USE_TMS
+	assign VGA_R   = ~st_tms9918_output ? apple1_R  : tms_R;
+	assign VGA_G   = ~st_tms9918_output ? apple1_G  : tms_G;
+	assign VGA_B   = ~st_tms9918_output ? apple1_B  : tms_B;
+	assign VGA_HS  = ~st_tms9918_output ? apple1_HS : tms_HS & tms_VS;
+	assign VGA_VS  = ~st_tms9918_output ? apple1_VS : tms_VS;
+`else
+	assign VGA_R   = apple1_R ;
+	assign VGA_G   = apple1_G ;
+	assign VGA_B   = apple1_B ;
+	assign VGA_HS  = apple1_HS;
+	assign VGA_VS  = apple1_VS;
+`endif
 
+`ifdef USE_TMS
 wire  [5:0] tms_out_R;
 wire  [5:0] tms_out_G;
 wire  [5:0] tms_out_B;
@@ -470,6 +506,7 @@ tms_mist_video
 	.VGA_VS(tms_out_VS),
 	.VGA_HS(tms_out_HS)	
 );
+`endif
 
 /******************************************************************************************/
 /******************************************************************************************/
@@ -593,6 +630,7 @@ clock clock(
 /******************************************************************************************/
 /******************************************************************************************/
 
+`ifdef USE_TMS
 wire        vram_we;
 wire [0:13] vram_a;        
 wire [0:7]  vram_din;      
@@ -665,6 +703,7 @@ tms9918
 	.G (tms_G),
 	.B (tms_B)
 );
+`endif
 
 /******************************************************************************************/
 /******************************************************************************************/
@@ -672,7 +711,9 @@ tms9918
 /******************************************************************************************/
 /******************************************************************************************/
 
-// TODO generic g_filter_div
+`ifdef USE_SID
+
+// TODO check generic g_filter_div
 wire [7:0] sid_dout;
 wire signed [17:0] sid_audio_out_l;
 wire signed [17:0] sid_audio_out_r;
@@ -697,6 +738,21 @@ sid_top sid_top
     .sample_right(sid_audio_out_r),	 
 	 .extfilter_en(0)
 );
+
+wire sid_audio_out_1bit;
+wire signed [18:0] sid_audio_out_combined = sid_audio_out_l + sid_audio_out_r;
+wire signed [15:0] sid_audio_out_combined1 = sid_audio_out_combined[18:3];
+wire        [15:0] sid_audio_out_combined2 = sid_audio_out_combined1 + 32767;
+
+dac #(.C_bits(16)) dac_SID
+(
+	.clk_i(sys_clock),
+   .res_n_i(pll_locked),	
+	.dac_i(sid_audio_out_combined2),
+	.dac_o(sid_audio_out_1bit)
+);
+
+`endif
 
 endmodule 
 
