@@ -40,7 +40,7 @@ localparam REFRESH_DIVISOR = 65;  // counts 65 clock ticks (one complete scanlin
 		end
 	end
 	
-	// the ram refresh cycle is activated by the horizontal counter on every 10 character
+	// the ram refresh cycle is activated by the horizontal counter on every 10 characters
 	wire RF = counter_refresh == 25 || counter_refresh == 35 || counter_refresh == 45 || counter_refresh == 55;
 	
 	assign cpu_clken      = counter_cpu   == 0 && !RF;
