@@ -170,8 +170,8 @@ downloader
    .ROM_done    ( ROM_loaded      ),	
 	         
    // external ram interface
-   .clk     ( sys_clock      ),
-	.clk_ena ( cpu_clken_noRF ),
+   .clk     ( cpu_clock      ), // does not work with sys_clock+cpu_clken_noRF and SDRAM
+	.clk_ena ( 1              ), // most likely because ioctl_wr isn't 1 for all the 8 sdram cycles
    .wr      ( download_wr    ),
    .addr    ( download_addr  ),
    .data    ( download_data  )	
@@ -277,7 +277,7 @@ wire        sdram_wr;
 wire        sdram_rd;
 wire [7:0]  sdram_dout;
 
-always @(*) begin
+always @(posedge sys_clock) begin
 	if(is_downloading && download_wr) begin
 		sdram_addr   <= download_addr;
 		sdram_din    <= download_data;
