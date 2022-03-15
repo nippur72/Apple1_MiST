@@ -354,7 +354,7 @@ apple1 apple1
 	.reset(reset_button), 
 	
 	.sys_clock   ( sys_clock   ),  // system clock
-	.cpu_clken   ( cpu_clken   ),  // CPU clock enable	
+	.cpu_clken   ( cpu_clken & ~is_downloading ),  // CPU clock enable	
 	.pixel_clken ( pixel_clken ),  // pixel clock enable
 	
 	// RAM interface
