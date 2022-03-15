@@ -550,35 +550,6 @@ user_io (
 // SDRAM control signals
 assign SDRAM_CKE = 1'b1;
 
-/*
-wire [24:0] sdram_addr;
-wire  [7:0] sdram_din;
-wire        sdram_wr;
-wire        sdram_rd;
-wire [7:0]  sdram_dout;
-
-always @(*) begin
-	if(is_downloading && download_wr) begin
-		sdram_addr   <= download_addr;
-		sdram_din    <= download_data;
-		sdram_wr     <= download_wr;
-		sdram_rd     <= 1'b1;			
-	end	
-	else if(eraser_busy) begin		
-		sdram_addr   <= eraser_addr;
-		sdram_din    <= eraser_data;
-		sdram_wr     <= eraser_wr;
-		sdram_rd     <= 1'b1;		
-	end	
-	else begin
-		sdram_addr   <= { 9'd0, cpu_addr[15:0] };
-		sdram_din    <= cpu_dout;		
-		sdram_wr     <= cpu_wr;
-		sdram_rd     <= cpu_rd;
-	end	
-end
-*/
-
 sdram sdram (
 	// interface to the MT48LC16M16 chip
    .sd_data        ( SDRAM_DQ                  ),
