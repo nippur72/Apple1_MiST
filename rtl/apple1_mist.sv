@@ -227,7 +227,7 @@ ACI ACI(
   .addr(sdram_addr[15:0]),
   .dout(aci_dout),
   .tape_in(CASIN),
-  .tape_out(CASOUT),
+  .tape_out(CASOUT)
 );
 
 // latches cassette audio input
@@ -294,7 +294,6 @@ end
 
 wire dummy = is_downloading && download_wr;
 assign LED = ~dummy;
-
 
 // ram interface
 wire [15:0] cpu_addr;
@@ -382,7 +381,7 @@ apple1 apple1
 	.vga_blu(b),
 
 	.vga_cls(),               // clear screen button (not connected yet) 
-	
+		
 	.reset_key(reset_key),       // keyboard shortcut for reset
 	.poweroff_key(poweroff_key)  // keyboard shortcut for power off/on
 );
