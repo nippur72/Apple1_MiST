@@ -40,7 +40,7 @@ module apple1(
     input ps2_clk,              // PS/2 keyboard serial clock input
     input ps2_din,              // PS/2 keyboard serial data input
 	 
-	 // interrupt signa
+	 // interrupt signal
 	 input INT_n,
 
     // video outputs
