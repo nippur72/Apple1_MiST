@@ -4,7 +4,6 @@
 //
 
 // TODO make roms loadable
-// TODO use a CPU that allows illegal instructions
 // TODO power on-off key ? init ram with values
 // TODO ram powerup initial values
 // TODO reorganize file structure

@@ -202,6 +202,11 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:rtl/build_id.tcl"
 
 # end ENTITY(apple1_mist)
 # -----------------------
+set_global_assignment -name VHDL_FILE rtl/T65/T65_Pack.vhd
+set_global_assignment -name VHDL_FILE rtl/T65/T65_MCode.vhd
+set_global_assignment -name VHDL_FILE rtl/T65/T65_ALU.vhd
+set_global_assignment -name VHDL_FILE rtl/T65/T65.vhd
+set_global_assignment -name QIP_FILE rtl/T65/T65.qip
 set_global_assignment -name VHDL_FILE rtl/sid/wave_map.vhd
 set_global_assignment -name VHDL_FILE rtl/sid/sid_top.vhd
 set_global_assignment -name VHDL_FILE rtl/sid/sid_regs.vhd
@@ -236,9 +241,6 @@ set_global_assignment -name VERILOG_FILE "rtl/mist-modules/data_io.v"
 set_global_assignment -name VHDL_FILE "rtl/mist-modules/dac.vhd"
 set_global_assignment -name SYSTEMVERILOG_FILE "rtl/mist-modules/cofi.sv"
 set_global_assignment -name VERILOG_FILE "rtl/mist-modules/arcade_inputs.v"
-set_global_assignment -name VERILOG_FILE rtl/arlet_6502/cpu.v
-set_global_assignment -name VERILOG_FILE rtl/arlet_6502/ALU.v
-set_global_assignment -name VERILOG_FILE rtl/arlet_6502/arlet_6502.v
 set_global_assignment -name VERILOG_FILE rtl/apple1.v
 set_global_assignment -name VERILOG_FILE rtl/clock.v
 set_global_assignment -name VERILOG_FILE rtl/rom_basic.v

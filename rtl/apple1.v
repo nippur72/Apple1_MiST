@@ -48,7 +48,7 @@ module apple1(
     output       vga_v_sync,          // vertical sync pulse
     output [5:0] vga_red,             // red signal
     output [5:0] vga_grn,             // green signal
-    output [5:0] vga_blu,             // blue signal    
+    output [5:0] vga_blu,             // blue signal  
 	 
 	 output reset_key,           // keyboard shortcut for reset
 	 output poweroff_key         // keyboard shortcut for poweroff/on
@@ -69,27 +69,51 @@ module apple1(
 
     //////////////////////////////////////////////////////////////////////////
     // 6502
-
-    arlet_6502 arlet_6502(
-        .clk    (sys_clock),
-        .enable (cpu_clken),
-        .rst    (reset),
-        .ab     (addr),
-        .dbi    (cpu_din),
-        .dbo    (cpu_dout),
-        .we     (we),
-        .irq_n  (INT_n),
-        .nmi_n  (1'b1),
-        .ready  (cpu_clken)        
-    );
-
+	
+	 wire    R_W_n;	 	 
+	 assign  we = ~R_W_n;
+	 
+	 // for debugging T65
+	 wire [63:0] T65_regs;	 
+	 wire [15:0] T65_A  = T65_regs[ 7: 0];
+	 wire [15:0] T65_X  = T65_regs[15: 8];
+	 wire [15:0] T65_Y  = T65_regs[23:16];
+	 wire [15:0] T65_P  = T65_regs[31:24];
+	 wire [15:0] T65_SP = T65_regs[39:32];
+	 wire [23:0] T65_PC = T65_regs[63:40];
+	 
+	 T65 T65(
+		 .Mode(2'b00),        // "00" => 6502, "01" => 65C02, "10" => 65C816		 
+       .Res_n(~(reset & !cpu_arlet)),  
+		 .Enable(cpu_clken & !cpu_arlet), 
+		 .Clk(sys_clock),
+		 .Rdy(1'b1),       
+		 .IRQ_n(INT_n), 
+		 .NMI_n(1'b1),		 
+		 .R_W_n(R_W_n),   
+		 .A(addr),             		 
+		 .DI(R_W_n == 0 ? cpu_dout : cpu_din),   // T65 requires cpu_dout feed back in
+		 .DO(cpu_dout),
+		 .Regs(T65_regs)
+	 );    			 	 	 	 
+	 	 
     //////////////////////////////////////////////////////////////////////////
     // Address Decoding
 
     wire keyboard_cs = (addr[15:1]  == 15'b110100000001000);  // 0xD010 -> 0xD011
     wire display_cs  = (addr[15:1]  == 15'b110100000001001);  // 0xD012 -> 0xD013               
 	 wire ram_cs = !keyboard_cs & !display_cs;
-
+	 wire debug_cs = addr >= 16'hF000 && addr <= 16'hF007;
+	 	 
+	 wire [7:0] debug_dout = addr[7:0] == 0 ? T65_A         :        // A regs[ 7: 0]
+									 addr[7:0] == 1 ? T65_X         :        // X regs[15: 8]
+									 addr[7:0] == 2 ? T65_Y         :        // Y regs[23:16]
+									 addr[7:0] == 3 ? T65_P         :        // P regs[31:24]
+									 addr[7:0] == 4 ? T65_SP        :        // SP regs[39:32]
+									 addr[7:0] == 5 ? T65_PC[ 7: 0] :        // PC regs[47:40]
+									 addr[7:0] == 6 ? T65_PC[15: 8] :        // PC regs[55:48]
+									 addr[7:0] == 7 ? T65_PC[23:16] : 8'hAA; // PC regs[63:56]
+									                   	 
 	 // byte returned from display out
 	 wire [7:0] display_dout = { ~PB7, 7'b0 };  
 
@@ -137,8 +161,10 @@ module apple1(
     // CPU Data In MUX
 
     // link up chip selected device to cpu input
-    assign cpu_din = display_cs  ? display_dout :
+    assign cpu_din = debug_cs    ? debug_dout   :
+	                  display_cs  ? display_dout :
                      keyboard_cs ? ps2_dout     :
-							ram_cs      ? ram_dout     :
+							ram_cs      ? ram_dout     :							
 							8'hFF;
+							
 endmodule
