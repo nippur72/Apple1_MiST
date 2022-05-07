@@ -70,7 +70,7 @@ module apple1(
     //////////////////////////////////////////////////////////////////////////
     // 6502
 	
-	 wire    R_W_n;	 	 
+	 wire    R_W_n;	 	     // 1=read, 0=write
 	 assign  we = ~R_W_n;
 	 
 	 // for debugging T65
@@ -84,10 +84,10 @@ module apple1(
 	 
 	 T65 T65(
 		 .Mode(2'b00),        // "00" => 6502, "01" => 65C02, "10" => 65C816		 
-       .Res_n(~(reset & !cpu_arlet)),  
-		 .Enable(cpu_clken & !cpu_arlet), 
+       .Res_n(~reset),  
+		 .Enable(cpu_clken), 
 		 .Clk(sys_clock),
-		 .Rdy(1'b1),       
+		 .Rdy(cpu_clken),       
 		 .IRQ_n(INT_n), 
 		 .NMI_n(1'b1),		 
 		 .R_W_n(R_W_n),   
