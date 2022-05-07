@@ -4,6 +4,7 @@
 //
 
 // TODO make roms loadable
+// TODO sdram downloader error
 // TODO power on-off key ? init ram with values
 // TODO ram powerup initial values
 // TODO reorganize file structure
@@ -109,7 +110,7 @@ wire no_csync;
 wire ps2_kbd_clk;
 wire ps2_kbd_data;
 
-wire reset_button = status[0] | st_menu_reset | st_reset_switch | reset_key_edge |!pll_locked;
+wire reset_button = status[0] | st_menu_reset | st_reset_switch | reset_key_edge | !pll_locked;
 
 /******************************************************************************************/
 /******************************************************************************************/
@@ -118,6 +119,7 @@ wire reset_button = status[0] | st_menu_reset | st_reset_switch | reset_key_edge
 /******************************************************************************************/
 
 wire pll_locked;
+wire fpga_reset = ~pll_locked;
 
 wire sys_clock;          // cpu x 7 x 8 system clock (sdram.v)
 wire osd_clock;          // cpu x 7 x 2 for the OSD menu
@@ -380,7 +382,7 @@ apple1 apple1
 	.vga_grn(g),
 	.vga_blu(b),
 
-	.vga_cls(),               // clear screen button (not connected yet) 
+	.vga_cls(),                  // clear screen button (not connected yet) 
 		
 	.reset_key(reset_key),       // keyboard shortcut for reset
 	.poweroff_key(poweroff_key)  // keyboard shortcut for power off/on
