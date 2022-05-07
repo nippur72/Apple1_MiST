@@ -9,7 +9,7 @@
 // TODO reorganize file structure
 // TODO A-F chip selection banks?
 // TODO check diff with updated data_io.v and other modules
-// TODO keyboard: use a PIA
+// TODO keyboard: implement PIA 6820(1)
 // TODO keyboard: isolate ps2 keyboard from apple1
 // TODO keyboard: check ps2 clock
 // TODO keyboard: make a true ascii keyboard
@@ -18,7 +18,7 @@
 // TODO display: check NTSC AD724 hsync problem (yellow menu doesn't work)
 // TODO display: reduce to 512 bytes font
 // TODO display: check parameters vs real apple1
-// TODO display: emulate PIA registers
+// TODO display: implement PIA 6820(1)
 // TODO tms9918: fix video sync on composite and mist_video
 // TODO tms9918: make it selectable via keyboard
 // TODO sid: unsigned vs signed dac ?

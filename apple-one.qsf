@@ -334,6 +334,7 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:rtl/build_id.tcl"
 
 # end ENTITY(apple1_mist)
 # -----------------------
+set_global_assignment -name VHDL_FILE rtl/pia6821/pia6821.vhd
 set_global_assignment -name VHDL_FILE rtl/T65/T65_Pack.vhd
 set_global_assignment -name VHDL_FILE rtl/T65/T65_MCode.vhd
 set_global_assignment -name VHDL_FILE rtl/T65/T65_ALU.vhd

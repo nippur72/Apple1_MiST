@@ -167,5 +167,39 @@ module apple1(
                      keyboard_cs ? ps2_dout     :
 							ram_cs      ? ram_dout     :							
 							8'hFF;
-							
+		
+    /*		
+    wire pia_cs = cpu_clken & keyboard_cs;							
+
+	 wire [7:0] pia_dout;
+	 wire kbd_strobe;
+	 
+    pia6821 pia6821(	
+		.clk(sys_clock),     // : in    std_logic;
+		.rst(reset),         // : in    std_logic;
+		.cs(pia_cs),         // : in    std_logic;
+		.rw(R_W_n),          // : in    std_logic;  1=read, 0=write 
+		.addr(addr[1:0]),    // : in    std_logic_vector(1 downto 0);
+		.data_in(cpu_dout),  // : in    std_logic_vector(7 downto 0);
+		.data_out(pia_dout), // : out   std_logic_vector(7 downto 0);
+	 //.irqa                // : out   std_logic;
+	 //.irqb                // : out   std_logic;
+		.pa_i(ps2_dout),     // : in std_logic_vector(7 downto 0);
+	 //.pa_o                // : out std_logic_vector(7 downto 0);
+	 //.pa_oe               // : out std_logic_vector(7 downto 0);
+		.ca1(kbd_strobe)     // : in    std_logic;
+	 //.ca2_i               // : in std_logic;
+	 //.ca2_o               // : out std_logic;
+	 //.ca2_oe              // : out std_logic;
+	 	
+		//pb_i      : in std_logic_vector(7 downto 0);
+		//pb_o      : out std_logic_vector(7 downto 0);
+		//pb_oe     : out std_logic_vector(7 downto 0);
+		//cb1       : in    std_logic;
+		//cb2_i     : in std_logic;
+		//cb2_o     : out std_logic;
+		//cb2_oe    : out std_logic	
+	 );
+	 */							
+	
 endmodule
