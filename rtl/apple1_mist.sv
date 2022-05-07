@@ -350,6 +350,7 @@ end
 apple1 apple1 
 (  
 	.reset(reset_button), 
+	.fpga_reset(fpga_reset),
 	
 	.sys_clock   ( sys_clock   ),  // system clock
 	.cpu_clken   ( cpu_clken & ~is_downloading ),  // CPU clock enable	
@@ -585,7 +586,7 @@ wire cpu_clock;      // cpu clock for the sdram controller sync
 
 clock clock(
   .sys_clock  ( sys_clock     ),   // input: main clock
-  .reset      ( reset_button  ),   // input: reset signal
+  .reset      ( fpga_reset    ),   // input: reset signal
 
   .cpu_clock      ( cpu_clock      ),  
   .cpu_clken      ( cpu_clken      ),   // output: cpu clock enable (phi2)

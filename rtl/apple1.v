@@ -24,6 +24,7 @@
 
 module apple1(
     input  reset,               // reset
+	 input  fpga_reset,          // fpga reset for one-time reset of display and keyboard
 	 
     input  sys_clock,           // system clock	 
 	 input  pixel_clken,         // 7 MHz pixel clock 
@@ -125,7 +126,7 @@ module apple1(
 	 wire cls_key;
     ps2keyboard keyboard(
         .clk(sys_clock),
-        .rst(reset),
+        .rst(fpga_reset),
         .key_clk(ps2_clk),
         .key_din(ps2_din),
         .cs(keyboard_cs),
@@ -138,7 +139,7 @@ module apple1(
 
 	 wire PB7; // (negated) display ready (PB7 of CIA)
     display display(
-	     .reset(reset),
+	     .reset(fpga_reset),
 		  
         .sys_clock(sys_clock),
 		  .pixel_clken(pixel_clken),
