@@ -93,7 +93,7 @@ localparam CONF_STR = {
 };
 
 `ifdef USE_TMS	
-localparam BLOCKRAM_SIZE = 'hA000;
+localparam BLOCKRAM_SIZE = 'h7000;
 `else
 localparam BLOCKRAM_SIZE = 'hC000;
 `endif
