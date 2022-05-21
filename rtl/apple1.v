@@ -116,8 +116,9 @@ module apple1(
 									 addr[7:0] == 7 ? T65_PC[23:16] : 8'hAA; // PC regs[63:56]
 									                   	 
 	 // byte returned from display out
-	 wire [7:0] display_dout = { ~PB7, 7'b0 };  
-
+	 wire [6:0] dsp_dout;
+	 wire [7:0] display_dout = { ~PB7, dsp_dout };  
+	 
     //////////////////////////////////////////////////////////////////////////
     // Peripherals
 
@@ -153,7 +154,8 @@ module apple1(
 
         .address(addr[0]),
         .w_en(we & display_cs),
-        .din(cpu_dout),        
+        .din(cpu_dout),
+        .dout(dsp_dout),        
         .clr_screen(cls_key),
 		  .ready(PB7)
     );

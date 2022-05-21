@@ -19,7 +19,8 @@ module display (
 	 // cpu interface
     input address,          // address bus
     input w_en,             // active high write enable strobe
-    input [7:0] din         // 8-bit data bus (input)    
+    input [7:0] din,        // 8-bit data bus (input)   
+	 output reg [6:0] dout   // input data is also seen as output
 );
 
     //////////////////////////////////////////////////////////////////////////
@@ -254,7 +255,8 @@ module display (
                 if (address == 1'b0) begin
                     if (cpu_clken & w_en & ready) begin
                         // incoming character                        
-					         ready <= 0;			
+					         ready <= 0;
+					         dout[6:0] <= din[6:0];
 								
 								if(din[6:0]=='h0D) begin
 									 // handle carriage return
