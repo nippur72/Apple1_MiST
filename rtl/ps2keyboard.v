@@ -53,6 +53,7 @@ module ps2keyboard (
     reg [7:0]  ascii;       // ASCII code of received character
     reg ascii_rdy;          // new ASCII character received
     reg shift;              // state of the shift key
+	 reg control;            // state of the control key
     reg [2:0] cur_state;
     reg [2:0] next_state;
 
@@ -123,6 +124,7 @@ module ps2keyboard (
             rx          <= 0;
             ascii_rdy   <= 0;
             shift       <= 0;
+				control     <= 0;
             cur_state   <= S_KEYNORMAL;
 				
 				/*
@@ -180,18 +182,52 @@ module ps2keyboard (
                                 //end
                                 
                                 // check for a SHIFT key
-                                if ((rx == 8'h59) || (rx == 8'h12))
-                                begin
+                                if ((rx == 8'h59) || (rx == 8'h12)) begin
                                     shift <= 1'b1;
                                     ascii_rdy <= 1'b0;  // shift is not a key!
                                 end                            
+										  else if(rx == 8'h14) begin
+                                    control <= 1'b1;
+                                    ascii_rdy <= 1'b0;  // control is not a key!
+                                end                            
                                 else begin
-                                    if (!shift)
+										      if(control) begin
+                                        case(rx)
+													     8'h45:  ascii <= 0;  // ctrl+0 = NULL
+                                            8'h1C:  ascii <= 1;
+                                            8'h32:  ascii <= 2;
+                                            8'h21:  ascii <= 3;
+                                            8'h23:  ascii <= 4;
+                                            8'h24:  ascii <= 5;
+                                            8'h2B:  ascii <= 6;
+                                            8'h34:  ascii <= 7;
+                                            8'h33:  ascii <= 8;
+                                            8'h43:  ascii <= 9;
+                                            8'h3B:  ascii <= 10;
+                                            8'h42:  ascii <= 11;
+                                            8'h4B:  ascii <= 12;
+                                            8'h3A:  ascii <= 13;
+                                            8'h31:  ascii <= 14;
+                                            8'h44:  ascii <= 15;
+                                            8'h4D:  ascii <= 16;
+                                            8'h15:  ascii <= 17;
+                                            8'h2D:  ascii <= 18;
+                                            8'h1B:  ascii <= 19;
+                                            8'h2C:  ascii <= 20;
+                                            8'h3C:  ascii <= 21;
+                                            8'h2A:  ascii <= 22;
+                                            8'h1D:  ascii <= 23;
+                                            8'h22:  ascii <= 24;
+                                            8'h35:  ascii <= 25;
+                                            8'h1A:  ascii <= 26;
+													 endcase
+												end
+												else if (!shift)
                                         case(rx)
 													     8'h05:  cls_key <= 1;
 														  8'h03:  reset_key <= 1;
 														  8'h01:  poweroff_key <= 1;
-                                            8'h1C:  ascii <= "A";
+                                            8'h1C:  ascii <= "A";     // TODO wozmon does not handle lowercases?
                                             8'h32:  ascii <= "B";
                                             8'h21:  ascii <= "C";
                                             8'h23:  ascii <= "D";
@@ -231,11 +267,16 @@ module ps2keyboard (
 
                                             8'h4E:  ascii <= "-";
                                             8'h55:  ascii <= "=";
-                                            8'h5D:  ascii <= 8'h34;     // backslash
-                                            8'h66:  ascii <= 8'd8;      // backspace
-                                            8'h29:  ascii <= " ";
+														  8'h29:  ascii <= " ";
 
+                                            8'h5D:  ascii <= 8'd92;     // backslash
+                                            8'h66:  ascii <= 8'd8;      // backspace                                           
                                             8'h5A:  ascii <= 8'd13;     // enter
+														  8'h76:  ascii <= 8'd27;     // esc
+														  8'h0d:  ascii <= 8'd9;      // tab
+														  
+														  8'h0e:  ascii <= 8'd96;     // backtick  
+														  
                                             8'h54:  ascii <= "[";
                                             8'h5B:  ascii <= "]";
                                             8'h4C:  ascii <= ";";
@@ -294,10 +335,14 @@ module ps2keyboard (
                                             8'h4E:  ascii <= "_";
                                             8'h55:  ascii <= "+";
                                             8'h5D:  ascii <= "|";
-                                            8'h66:  ascii <= 8'd8;      // backspace
                                             8'h29:  ascii <= " ";
 
+                                            8'h66:  ascii <= 8'd8;      // backspace
                                             8'h5A:  ascii <= 8'd13;     // enter
+														  8'h76:  ascii <= 8'd27;     // esc
+														  8'h0d:  ascii <= 8'd9;      // tab
+														  8'h0e:  ascii <= "~";       
+														  
                                             8'h54:  ascii <= "{";
                                             8'h5B:  ascii <= "}";
                                             8'h4C:  ascii <= ":";
@@ -319,8 +364,8 @@ module ps2keyboard (
                         // when we end up here, a 0xF0 byte was received
                         // which usually means a key release event
                         begin
-                            if ((rx == 8'h59) || (rx == 8'h12))
-                                shift <= 1'b0;
+                            if ((rx == 8'h59) || (rx == 8'h12)) shift <= 1'b0;
+									 if (rx == 8'h14) control <= 1'b0;
                             next_state = S_KEYNORMAL;
 									 cls_key <= 0;
 									 reset_key <= 0;
