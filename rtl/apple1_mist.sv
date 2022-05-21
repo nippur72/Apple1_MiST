@@ -81,6 +81,7 @@ localparam CONF_STR = {
 	"O2,TMS9918 output,Off,On;",
 `endif
 	"O3,Audio monitor,tape in,tape out;",
+	"O4,SDRAM at $4000,off,on;",
 	"T6,Reset;",
 	"V,",`BUILD_DATE
 `ifdef USE_SID
@@ -90,6 +91,12 @@ localparam CONF_STR = {
 	,"+TMS"
 `endif
 };
+
+`ifdef USE_TMS	
+localparam BLOCKRAM_SIZE = 'hA000;
+`else
+localparam BLOCKRAM_SIZE = 'hC000;
+`endif
 
 localparam conf_str_len = $size(CONF_STR)>>3;
 
@@ -102,6 +109,7 @@ wire  [1:0] switches;
 wire st_tms9918_output    = status[2];
 wire st_audio_mon_tape_in = ~status[3];
 wire st_menu_reset        = status[6];
+wire st_sdram_expansion   = status[4];
 
 wire scandoubler_disable;
 wire ypbpr;
@@ -123,7 +131,13 @@ wire fpga_reset = ~pll_locked;
 
 wire sys_clock;          // cpu x 7 x 8 system clock (sdram.v)
 wire osd_clock;          // cpu x 7 x 2 for the OSD menu
+//wire F7M_clock;          // cpu x 7 (SDRAM/8) for downloader
+
+`ifdef USE_TMS		
 wire vdp_clock;          // tms9918 x 2 for osd menu 
+`endif
+
+assign SDRAM_CLK = sys_clock;
 
 pll pll 
 (
@@ -131,9 +145,12 @@ pll pll
 	.locked(pll_locked),
 	
 	.c0( osd_clock      ),  // cpu x 7 x 2 video clock for OSD menu
+	//.c1( F7M_clock      ),  // cpu x 7 (SDRAM/8) for downloader
    .c2( sys_clock      ),  // cpu x 7 x 8 system clock (sdram.v)
-	.c3( SDRAM_CLK      ),  // cpu x 7 x 8 phase shifted -2.5 ns  
+//	.c3( SDRAM_CLK      ),  // cpu x 7 x 8 phase shifted -2.5 ns  
+`ifdef USE_TMS		
    .c4( vdp_clock      )   // tms9918 x 2 for osd menu (10.738635 x 2 = 21.47727)
+`endif	
 );
 
 /******************************************************************************************/
@@ -186,12 +203,12 @@ downloader
 
 wire [7:0] ram_dout;
 
-// low system RAM
-ram #(.SIZE(16384)) ram(
+// low system RAM 
+ram #(.SIZE(BLOCKRAM_SIZE)) ram(
   .clk    (sys_clock ),
-  .address(sdram_addr[15:0]),
-  .w_en   (sdram_wr & ram_cs),
-  .din    (sdram_din ),
+  .address(bus_addr[15:0]),
+  .w_en   (bus_wr & ram_cs),
+  .din    (bus_din ),
   .dout   (ram_dout  )  
 );
 
@@ -208,9 +225,9 @@ rom_wozmon rom_wozmon(
 wire [7:0] basic_dout;
 ram #(.SIZE(4096)) rom_basic(
   .clk(sys_clock),
-  .address({4'b000, sdram_addr[11:0]}),
-  .w_en   (sdram_wr & basic_cs),
-  .din    (sdram_din ),
+  .address({4'b000, bus_addr[11:0]}),
+  .w_en   (bus_wr & basic_cs),
+  .din    (bus_din ),
   .dout   (basic_dout)
 );
 
@@ -225,7 +242,7 @@ wire CASOUT;
 ACI ACI(
   .clk(sys_clock),
   .cpu_clken(cpu_clken),
-  .addr(sdram_addr[15:0]),
+  .addr(bus_addr[15:0]),
   .dout(aci_dout),
   .tape_in(CASIN),
   .tape_out(CASOUT)
@@ -266,51 +283,31 @@ end
 
 /******************************************************************************************/
 /******************************************************************************************/
-/***************************************** @apple1 ****************************************/
+/***************************************** @bus *******************************************/
 /******************************************************************************************/
 /******************************************************************************************/
 
-// SDRAM control signals
+// bus control signals
 
-wire [24:0] sdram_addr;
-wire  [7:0] sdram_din;
-wire        sdram_wr;
-wire        sdram_rd;
-wire [7:0]  sdram_dout;
+wire [24:0] bus_addr;
+wire  [7:0] bus_din;
+wire        bus_wr;
+wire        bus_rd;
 
-always @(posedge sys_clock) begin
-	if(is_downloading && download_wr) begin
-		sdram_addr   <= download_addr;
-		sdram_din    <= download_data;
-		sdram_wr     <= download_wr;
-		sdram_rd     <= 1'b1;	      
-	end
-	else begin
-		sdram_addr   <= { 9'b0, cpu_addr[15:0] };
-		sdram_din    <= cpu_dout;		
-		sdram_wr     <= cpu_wr;
-		sdram_rd     <= 1'b1;		
-	end	
-end
+assign bus_addr = (is_downloading && download_wr) ? download_addr : { 9'b0, cpu_addr[15:0] };
+assign bus_din  = (is_downloading && download_wr) ? download_data : cpu_dout;
+assign bus_wr   = (is_downloading && download_wr) ? download_wr   : cpu_wr;
+assign bus_rd   = (is_downloading && download_wr) ? 1'b1          : 1'b1;	      // TODO provare !wr ??
 
-wire dummy = is_downloading && download_wr;
-assign LED = ~dummy;
-
-// ram interface
-wire [15:0] cpu_addr;
-wire [7:0]  cpu_dout;
-wire        cpu_rd;
-wire        cpu_wr;
-
-wire ram_cs   = sdram_addr <  'h4000;                         // 0x0000 -> 0x3FFF
-wire sdram_cs = sdram_addr >= 'h4000 && sdram_addr <= 'hBFFF; // 0x4000 -> 0xBFFF
-wire aci_cs   = sdram_addr >= 'hC000 && sdram_addr <= 'hC1FF; // 0xC000 -> 0xC1FF
-wire basic_cs = sdram_addr >= 'hE000 && sdram_addr <= 'hEFFF; // 0xE000 -> 0xEFFF
-wire rom_cs   = sdram_addr >= 'hFF00;                         // 0xFF00 -> 0xFFFF
+wire ram_cs   = bus_addr <= st_sdram_expansion ? 'h3FFF : 'hBFFF ;                         
+wire sdram_cs = st_sdram_expansion ? bus_addr >= 'h4000 && bus_addr <= 'hBFFF : 0; 
+wire aci_cs   = bus_addr >= 'hC000 && bus_addr <= 'hC1FF; 
+wire basic_cs = bus_addr >= 'hE000 && bus_addr <= 'hEFFF; 
+wire rom_cs   = bus_addr >= 'hFF00;                         
 
 // experimental SID 6561 
 `ifdef USE_SID
-	wire sid_cs   = sdram_addr >= 'hC800 && sdram_addr <= 'hC8FF; // 0xC800 -> 0xC8FF
+	wire sid_cs   = bus_addr >= 'hC800 && bus_addr <= 'hC8FF; // 0xC800 -> 0xC8FF
 `else
 	wire sid_cs   = 0;
 	wire sid_dout = 0;
@@ -318,7 +315,7 @@ wire rom_cs   = sdram_addr >= 'hFF00;                         // 0xFF00 -> 0xFFF
 
 // experimental TMS9918
 `ifdef USE_TMS
-	wire tms_cs   = sdram_addr >= 'hCC00 && sdram_addr <= 'hCC01; // 0xCC00 -> 0xCC01	
+	wire tms_cs   = bus_addr >= 'hCC00 && bus_addr <= 'hCC01; // 0xCC00 -> 0xCC01	
 `else
 	wire tms_cs   = 0;
 	wire vdp_dout = 0;
@@ -332,6 +329,12 @@ wire [7:0] bus_dout = rom_cs   ? rom_dout   :
                       sdram_cs ? sdram_dout :
 					       ram_cs   ? ram_dout   :
 					       8'b0;
+				
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @apple1 ****************************************/
+/******************************************************************************************/
+/******************************************************************************************/
 
 wire reset_key;
 wire poweroff_key;							 
@@ -348,7 +351,12 @@ reg reset_key_old = 0;
 always @(posedge sys_clock) begin
 	reset_key_old <= reset_key;
 end
-							 
+
+wire [15:0] cpu_addr;
+wire [7:0]  cpu_dout;
+wire        cpu_rd;
+wire        cpu_wr;
+				
 apple1 apple1 
 (  
 	.reset(reset_button), 
@@ -547,6 +555,8 @@ user_io (
 /***************************************** @sdram *****************************************/
 /******************************************************************************************/
 /******************************************************************************************/
+
+wire [7:0]  sdram_dout;
 			
 // SDRAM control signals
 assign SDRAM_CKE = 1'b1;
@@ -568,11 +578,11 @@ sdram sdram (
    .init           ( !pll_locked               ),	
 	
    // cpu interface
-   .din            ( sdram_din                 ),
-   .addr           ( sdram_addr                ),
-   .we             ( sdram_wr                  ),
-   .oe         	 ( sdram_rd                  ),
-   .dout           ( sdram_dout                )
+   .din            ( bus_din                 ),
+   .addr           ( bus_addr                ),
+   .we             ( bus_wr                  ),
+   .oe         	 ( bus_rd                  ),
+   .dout           ( sdram_dout              )
 );
 
 /******************************************************************************************/
@@ -595,6 +605,17 @@ clock clock(
   .cpu_clken_noRF ( cpu_clken_noRF ),   // output: cpu clock enable (phi0)
   .pixel_clken    ( pixel_clken    )    // output: pixel clock enable
 );
+
+
+/******************************************************************************************/
+/******************************************************************************************/
+/***************************************** @led *******************************************/
+/******************************************************************************************/
+/******************************************************************************************/
+
+wire dummy = is_downloading && download_wr;
+assign LED = ~dummy;
+
 
 /******************************************************************************************/
 /******************************************************************************************/
@@ -626,8 +647,8 @@ always @(posedge vdp_clock) begin
 	vdp_ena <= ~vdp_ena;
 end
 
-wire csr = tms_cs & sdram_rd;
-wire csw = tms_cs & sdram_wr;
+wire csr = tms_cs & bus_rd;
+wire csw = tms_cs & bus_wr;
 
 wire         tms_HS;
 wire         tms_VS;
@@ -655,11 +676,11 @@ tms9918
 	// control signals
    .csr_n  ( ~csr          ),
    .csw_n  ( ~csw          ),
-	.mode   ( sdram_addr[0] ),	    
+	.mode   ( bus_addr[0] ),	    
    .int_n  ( VDP_INT_n     ),
 
 	// cpu I/O 	
-   .cd_i          ( sdram_din   ),
+   .cd_i          ( bus_din   ),
    .cd_o          ( vdp_dout    ),
 		
 	//	vram	
@@ -694,9 +715,9 @@ sid_top sid_top
     .clock(sys_clock),
     .reset(reset_button),
                   
-    .addr(sdram_addr[7:0]),
+    .addr(bus_addr[7:0]),
     .wren(cpu_wr & sid_cs),          
-    .wdata(sdram_din),
+    .wdata(bus_din),
     .rdata(sid_dout),         
 
     .potx(0),
