@@ -325,6 +325,8 @@ set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to VGA_B[0]
 set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to VGA_HS
 set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to VGA_VS
 
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to SPI_SCK
+
 set_instance_assignment -name FAST_INPUT_REGISTER ON -to UART_RX
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to UART_TX
 
