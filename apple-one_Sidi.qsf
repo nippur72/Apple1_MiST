@@ -124,7 +124,7 @@ set_location_assignment PIN_T11 -to VGA_HS
 set_location_assignment PIN_T12 -to AUDIO_L                                                                           
 set_location_assignment PIN_T13 -to AUDIO_R                                                                           
 set_location_assignment PIN_D1 -to UART_TX                                                                           
-set_location_assignment PIN_B1 -to UART_RX                                                                           
+set_location_assignment PIN_P1 -to UART_RX
 set_location_assignment PIN_T2 -to SPI_DO                                                                           
 set_location_assignment PIN_R1 -to SPI_DI                                                                           
 set_location_assignment PIN_T3 -to SPI_SCK                                                                           
